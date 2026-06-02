@@ -508,7 +508,7 @@
           <input type="color" value="${row.color}"
             class="color-swatch shadow-sm border-2 border-white ring-1 ring-slate-200"
             title="Click to change color"
-            oninput="CSTATE.rows${side}[${idx}].color=this.value;saveCState();renderCompare();" />
+            oninput="CSTATE.rows${side}[${idx}].color=this.value;saveCState();renderCompareCharts();" />
         </div>
         <button onclick="removeCompareRow('${side}',${idx})"
           class="flex items-center justify-center w-6 h-6 rounded-md text-slate-300 hover:text-rose-400 hover:bg-rose-50 transition-colors" title="Remove">
