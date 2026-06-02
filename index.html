@@ -260,6 +260,15 @@
             class="w-full accent-sky-500 mt-1" oninput="onFontSize(this.value);document.getElementById('cFontSizeLabel').textContent=this.value+'px';" />
         </div>
 
+        <!-- Value Unit -->
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Value Unit</p>
+          <input id="cValueUnit" type="text" placeholder="e.g. minutes, $, units"
+            class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 mt-1"
+            style="width:160px"
+            oninput="CSTATE.valueUnit=this.value.trim();saveCState();renderCompareCharts();" />
+        </div>
+
         <!-- Legend + Donut -->
         <div class="flex flex-col gap-2">
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Style</p>
@@ -438,6 +447,8 @@
   const CSTATE = {
     titleA: '', titleB: '',
     proportional: false,
+    showSizeLabel: false,
+    valueUnit: '',
     rowsA: [], rowsB: []
   };
   function saveCState() { try { localStorage.setItem('pcf2c', JSON.stringify(CSTATE)); } catch(e){} }
@@ -621,14 +632,14 @@
         animation: { duration:300 },
         plugins: {
           legend: { display: STATE.showLegend, position:'bottom', labels:{ padding:10, boxWidth:10, boxHeight:10, font:{size:legendFont}, color:'#475569' } },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${((ctx.parsed/total)*100).toFixed(1)}%)` } },
+          tooltip: { callbacks: { label: ctx => { const u=CSTATE.valueUnit?' '+CSTATE.valueUnit:''; return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}${u} (${((ctx.parsed/total)*100).toFixed(1)}%)`; } } },
           datalabels: {
             display: ctx => (ctx.dataset.data[ctx.dataIndex]/total)*100 >= 5,
             formatter: (val, ctx) => {
               const parts = [];
               if (STATE.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
               if (STATE.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
-              if (STATE.labelModes.includes('value'))   parts.push(val.toLocaleString());
+              if (STATE.labelModes.includes('value'))   parts.push(val.toLocaleString()+(CSTATE.valueUnit?' '+CSTATE.valueUnit:''));
               return parts.length ? parts.join('\n') : '';
             },
             color: ctx => contrastColor(colors[ctx.dataIndex]),
@@ -934,9 +945,9 @@
   document.addEventListener('DOMContentLoaded', () => {
     loadState();
     loadCState();
-    document.getElementById('propToggle').className = 'toggle-track '+(CSTATE.proportional?'on':'off');
     if (CSTATE.titleA) document.getElementById('compareTitleA').value = CSTATE.titleA;
     if (CSTATE.titleB) document.getElementById('compareTitleB').value = CSTATE.titleB;
+    if (CSTATE.valueUnit) document.getElementById('cValueUnit').value = CSTATE.valueUnit;
 
     document.getElementById('chartTitle').value = STATE.chartTitle;
     document.getElementById('valueUnit').value = STATE.valueUnit || '';
