@@ -144,6 +144,12 @@
             <label class="text-xs text-slate-500">Donut Style</label>
             <div id="donutToggle" class="toggle-track off" onclick="toggleDonut()"><div class="toggle-thumb"></div></div>
           </div>
+
+          <!-- Show Total Toggle -->
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-slate-500">Show Total in Export</label>
+            <div id="totalToggle" class="toggle-track off" onclick="toggleShowTotal()"><div class="toggle-thumb"></div></div>
+          </div>
         </div>
 
         <!-- Ad Banner -->
@@ -226,6 +232,10 @@
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="sizeLabel" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleSizeLabel(this.checked)" />
             <span class="text-sm text-slate-700">Show % size change</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="cShowTotal" class="w-3.5 h-3.5 accent-sky-500" onchange="CSTATE.showTotal=this.checked;saveCState();" />
+            <span class="text-sm text-slate-700">Show Total in export</span>
           </label>
           <p class="text-xs text-slate-400 max-w-xs">Circle area scales to dataset total</p>
         </div>
@@ -433,7 +443,8 @@
     showLegend: true,
     isDonut: false,
     activePalette: 'Clean Corporate',
-    valueUnit: ''
+    valueUnit: '',
+    showTotal: false
   };
 
   const PALETTES = [
@@ -454,6 +465,7 @@
     titleA: '', titleB: '',
     proportional: false,
     showSizeLabel: false,
+    showTotal: false,
     valueUnit: '',
     rowsA: [], rowsB: []
   };
@@ -565,8 +577,10 @@
     if(fl) fl.textContent=STATE.fontSize+'px';
     const pc = document.getElementById('propCheck');
     const sl = document.getElementById('sizeLabel');
+    const st = document.getElementById('cShowTotal');
     if(pc) pc.checked = !!CSTATE.proportional;
     if(sl) sl.checked = !!CSTATE.showSizeLabel;
+    if(st) st.checked = !!CSTATE.showTotal;
   }
 
   function toggleProportional(checked) {
@@ -814,6 +828,13 @@
     saveState(); syncCToggles(); rerender();
   }
 
+  function toggleShowTotal() {
+    STATE.showTotal = !STATE.showTotal;
+    const t = document.getElementById('totalToggle');
+    t.className = 'toggle-track ' + (STATE.showTotal ? 'on' : 'off');
+    saveState();
+  }
+
   // ── Chart ────────────────────────────────────────────────────────────────────
   function renderChart() {
     const canvas = document.getElementById('pieChart');
@@ -888,11 +909,19 @@
   function exportCanvas(name, type) {
     if (!chartInstance) { alert('Generate a chart first!'); return; }
     const src = document.getElementById('pieChart');
+    const total = STATE.rows.reduce((s,r)=>s+(Number(r.value)||0),0);
+    const u = STATE.valueUnit ? ' '+STATE.valueUnit : '';
+    const totalLine = STATE.showTotal && total>0 ? 'Total: '+total.toLocaleString()+u : '';
+    const FOOT = totalLine ? 28 : 0;
     const off = document.createElement('canvas');
-    off.width = src.width; off.height = src.height;
+    off.width = src.width; off.height = src.height + FOOT;
     const ctx = off.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,off.width,off.height);
     ctx.drawImage(src,0,0);
+    if (totalLine) {
+      ctx.fillStyle='#64748b'; ctx.font='bold 13px Inter,system-ui,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(totalLine, off.width/2, src.height+19);
+    }
     const a = document.createElement('a');
     a.download = name; a.href = off.toDataURL(type,0.95); a.click();
   }
@@ -906,11 +935,11 @@
     const totalA = CSTATE.rowsA.reduce((s,r)=>s+Number(r.value),0);
     const totalB = CSTATE.rowsB.reduce((s,r)=>s+Number(r.value),0);
     const PAD = 40, GAP = 48, TITLE_H = 28;
-    const PCT_H = 0;
+    const FOOT_H = CSTATE.showTotal ? 28 : 0;
     const wA = cA.width||0, hA = cA.height||0;
     const wB = cB.width||0, hB = cB.height||0;
     const totalW = PAD + wA + GAP + wB + PAD;
-    const totalH = PAD + TITLE_H + Math.max(hA, hB) + PCT_H + PAD;
+    const totalH = PAD + TITLE_H + Math.max(hA, hB) + FOOT_H + PAD;
     const off = document.createElement('canvas');
     off.width = totalW; off.height = totalH;
     const ctx = off.getContext('2d');
@@ -944,6 +973,14 @@
     // Charts
     if (chartInstanceA) ctx.drawImage(cA, PAD, PAD+TITLE_H);
     if (chartInstanceB) ctx.drawImage(cB, PAD+wA+GAP, PAD+TITLE_H);
+    // Totals below each chart
+    if (CSTATE.showTotal && (totalA>0 || totalB>0)) {
+      const u = CSTATE.valueUnit ? ' '+CSTATE.valueUnit : '';
+      const footY = PAD + TITLE_H + Math.max(hA,hB) + 18;
+      ctx.font='bold 12px Inter,system-ui,sans-serif'; ctx.fillStyle='#64748b';
+      if (totalA>0) { ctx.textAlign='center'; ctx.fillText('Total: '+totalA.toLocaleString()+u, PAD+wA/2, footY); }
+      if (totalB>0) { ctx.textAlign='center'; ctx.fillText('Total: '+totalB.toLocaleString()+u, PAD+wA+GAP+wB/2, footY); }
+    }
     const a = document.createElement('a');
     a.download = name; a.href = off.toDataURL(type,0.95); a.click();
   }
@@ -974,6 +1011,7 @@
     document.getElementById('fontSizeLabel').textContent = STATE.fontSize + 'px';
     document.getElementById('legendToggle').className = 'toggle-track ' + (STATE.showLegend?'on':'off');
     document.getElementById('donutToggle').className   = 'toggle-track ' + (STATE.isDonut?'on':'off');
+    document.getElementById('totalToggle').className   = 'toggle-track ' + (STATE.showTotal?'on':'off');
     const modes = STATE.labelModes || ['percent'];
     ['percent','value','label'].forEach(m => {
       const cb = document.getElementById('mode-'+m);
