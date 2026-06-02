@@ -392,7 +392,7 @@
       div.innerHTML = `
         <input type="text" value="${escHtml(row.label)}" placeholder="e.g. Sales"
           class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 w-full"
-          oninput="CSTATE.rows${side}[${idx}].label=this.value;saveCState();renderCompare();" />
+          oninput="CSTATE.rows${side}[${idx}].label=this.value;saveCState();renderCompareCharts();" />
         <input type="number" value="${row.value}" min="0" step="any" placeholder="0"
           class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 w-full text-right"
           oninput="CSTATE.rows${side}[${idx}].value=parseFloat(this.value)||0;saveCState();renderCompare();" />
@@ -421,6 +421,26 @@
     saveCState(); renderCompareRows(side); renderCompare();
   }
 
+  let cDebounce = null;
+  function renderCompareCharts() {
+    clearTimeout(cDebounce);
+    cDebounce = setTimeout(() => {
+      const totalA = CSTATE.rowsA.reduce((s,r)=>s+Number(r.value),0);
+      const totalB = CSTATE.rowsB.reduce((s,r)=>s+Number(r.value),0);
+      const maxTotal = Math.max(totalA, totalB, 1);
+      const BASE = 280;
+      function sizeFor(t) { return (!CSTATE.proportional||t===0) ? BASE : Math.round(BASE*Math.sqrt(t/maxTotal)); }
+      renderOneCompare('A', CSTATE.rowsA, totalA, sizeFor(totalA));
+      renderOneCompare('B', CSTATE.rowsB, totalB, sizeFor(totalB));
+      const elA=document.getElementById('cTotalA'), elB=document.getElementById('cTotalB');
+      if(elA) elA.textContent=totalA>0?'Total: '+totalA.toLocaleString():'';
+      if(elB) elB.textContent=totalB>0?'Total: '+totalB.toLocaleString():'';
+      const tA=document.getElementById('cTitleA'), tB=document.getElementById('cTitleB');
+      if(tA){tA.textContent=CSTATE.titleA||'Dataset A';tA.className='text-sm font-semibold mb-3 text-center '+(CSTATE.titleA?'text-slate-700':'text-slate-400');}
+      if(tB){tB.textContent=CSTATE.titleB||'Dataset B';tB.className='text-sm font-semibold mb-3 text-center '+(CSTATE.titleB?'text-slate-700':'text-slate-400');}
+    }, 120);
+  }
+
   function toggleProportional() {
     CSTATE.proportional = !CSTATE.proportional;
     document.getElementById('propToggle').className = 'toggle-track '+(CSTATE.proportional?'on':'off');
@@ -431,28 +451,7 @@
   function renderCompare() {
     renderCompareRows('A');
     renderCompareRows('B');
-    const totalA = CSTATE.rowsA.reduce((s,r)=>s+Number(r.value),0);
-    const totalB = CSTATE.rowsB.reduce((s,r)=>s+Number(r.value),0);
-    const maxTotal = Math.max(totalA, totalB, 1);
-    const BASE = 280;
-
-    function sizeFor(total) {
-      if (!CSTATE.proportional || total===0) return BASE;
-      return Math.round(BASE * Math.sqrt(total / maxTotal));
-    }
-
-    renderOneCompare('A', CSTATE.rowsA, totalA, sizeFor(totalA));
-    renderOneCompare('B', CSTATE.rowsB, totalB, sizeFor(totalB));
-
-    const elA = document.getElementById('cTotalA');
-    const elB = document.getElementById('cTotalB');
-    if (elA) elA.textContent = totalA>0 ? 'Total: '+totalA.toLocaleString() : '';
-    if (elB) elB.textContent = totalB>0 ? 'Total: '+totalB.toLocaleString() : '';
-
-    const tA = document.getElementById('cTitleA');
-    const tB = document.getElementById('cTitleB');
-    if (tA) { tA.textContent = CSTATE.titleA||'Dataset A'; tA.className = 'text-sm font-semibold mb-3 text-center '+(CSTATE.titleA?'text-slate-700':'text-slate-400'); }
-    if (tB) { tB.textContent = CSTATE.titleB||'Dataset B'; tB.className = 'text-sm font-semibold mb-3 text-center '+(CSTATE.titleB?'text-slate-700':'text-slate-400'); }
+    renderCompareCharts();
   }
 
   function renderOneCompare(side, rows, total, size) {
