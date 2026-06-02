@@ -15,7 +15,7 @@
     .color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
     .color-swatch::-webkit-color-swatch { border: none; border-radius: 50%; }
     .premium-badge { background: linear-gradient(135deg,#f59e0b,#d97706); font-size:0.6rem; padding:1px 5px; border-radius:999px; color:#fff; font-weight:700; letter-spacing:.05em; vertical-align:middle; }
-    .modal-hidden { display: none; }
+    .modal-hidden { display: none !important; }
     .row-enter { animation: fadeIn .15s ease; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
     .gen-btn { background: linear-gradient(135deg,#0ea5e9,#6366f1); transition: filter .15s, transform .1s; }
@@ -183,7 +183,7 @@
   </main>
 
   <!-- SVG Modal -->
-  <div id="svgModal" class="modal-hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60" style="backdrop-filter:blur(4px)" onclick="if(event.target===this)closeSvgModal()">
+  <div id="svgModal" class="modal-hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60" style="display:none;backdrop-filter:blur(4px)" onclick="if(event.target===this)closeSvgModal()">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
       <button onclick="closeSvgModal()" class="absolute top-4 right-4 text-slate-300 hover:text-slate-500">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -469,8 +469,8 @@
   }
 
   // ── Modal ────────────────────────────────────────────────────────────────────
-  function openSvgModal()  { document.getElementById('svgModal').classList.remove('modal-hidden'); }
-  function closeSvgModal() { document.getElementById('svgModal').classList.add('modal-hidden'); }
+  function openSvgModal()  { document.getElementById('svgModal').style.display = 'flex'; }
+  function closeSvgModal() { document.getElementById('svgModal').style.display = 'none'; }
   function handlePayment(plan) {
     alert('Stripe coming soon!\n' + (plan==='day' ? '$2 Day Pass' : '$5 Lifetime'));
   }
