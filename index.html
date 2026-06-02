@@ -28,6 +28,8 @@
     .toggle-track.on { background:#0ea5e9; }
     .toggle-track.on .toggle-thumb { transform: translateX(20px); }
     .toggle-track.off { background:#cbd5e1; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+    input[type=number] { -moz-appearance:textfield; appearance:textfield; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -414,7 +416,7 @@
         <input type="text" value="${escHtml(row.label)}" placeholder="e.g. Sales"
           class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 w-full"
           oninput="CSTATE.rows${side}[${idx}].label=this.value;saveCState();renderCompareCharts();" />
-        <input type="number" value="${row.value}" min="0" step="any" placeholder="0"
+        <input type="text" inputmode="decimal" value="${row.value||''}" placeholder="0"
           class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 w-full text-right"
           oninput="CSTATE.rows${side}[${idx}].value=parseFloat(this.value)||0;saveCState();renderCompare();" />
         <div class="flex justify-center">
@@ -579,7 +581,7 @@
         <input type="text" value="${escHtml(row.label)}" placeholder="e.g. Sales, Marketing"
           class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 w-full"
           oninput="STATE.rows[${idx}].label=this.value;saveState();renderChart();" />
-        <input type="number" value="${row.value}" min="0" step="any" placeholder="0"
+        <input type="text" inputmode="decimal" value="${row.value||''}" placeholder="0"
           class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 w-full text-right"
           oninput="STATE.rows[${idx}].value=parseFloat(this.value)||0;saveState();renderChart();" />
         <div class="flex justify-center">
