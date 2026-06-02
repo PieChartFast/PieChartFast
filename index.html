@@ -98,11 +98,20 @@
 
           <!-- Label Mode -->
           <div>
-            <label class="block text-xs text-slate-500 mb-1.5">Label Mode</label>
-            <div class="flex rounded-lg border border-slate-200 overflow-hidden text-sm">
-              <button id="mode-percent" class="mode-btn flex-1 py-1.5 transition-colors active" onclick="setMode('percent')">Percent %</button>
-              <button id="mode-value"   class="mode-btn flex-1 py-1.5 transition-colors border-l border-slate-200 bg-white text-slate-600 hover:bg-slate-50" onclick="setMode('value')">Value #</button>
-              <button id="mode-label"   class="mode-btn flex-1 py-1.5 transition-colors border-l border-slate-200 bg-white text-slate-600 hover:bg-slate-50" onclick="setMode('label')">Label</button>
+            <label class="block text-xs text-slate-500 mb-1.5">Slice Labels <span class="text-slate-400 font-normal">(select any)</span></label>
+            <div class="flex flex-col gap-1.5">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="mode-percent" class="w-3.5 h-3.5 accent-sky-500" checked onchange="toggleMode('percent',this.checked)" />
+                <span class="text-sm text-slate-700">Percent %</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="mode-value" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleMode('value',this.checked)" />
+                <span class="text-sm text-slate-700">Value #</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="mode-label" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleMode('label',this.checked)" />
+                <span class="text-sm text-slate-700">Label</span>
+              </label>
             </div>
           </div>
 
@@ -224,7 +233,7 @@
   const STATE = {
     rows: [],
     chartTitle: '',
-    labelMode: 'percent',
+    labelModes: ['percent'],
     fontSize: 13,
     showLegend: true,
     isDonut: false,
@@ -360,13 +369,9 @@
     renderChart();
   }
 
-  function setMode(mode) {
-    STATE.labelMode = mode;
-    ['percent','value','label'].forEach(m => {
-      const btn = document.getElementById('mode-'+m);
-      if (m === mode) { btn.classList.add('active'); btn.classList.remove('bg-white','text-slate-600','hover:bg-slate-50'); }
-      else { btn.classList.remove('active'); btn.classList.add('bg-white','text-slate-600','hover:bg-slate-50'); }
-    });
+  function toggleMode(mode, checked) {
+    if (checked) { if (!STATE.labelModes.includes(mode)) STATE.labelModes.push(mode); }
+    else { STATE.labelModes = STATE.labelModes.filter(m => m !== mode); }
     saveState();
     renderChart();
   }
@@ -425,15 +430,17 @@
           legend: {
             display: STATE.showLegend,
             position: 'bottom',
-            labels: { padding:16, usePointStyle:true, pointStyleWidth:10, font:{size:12}, color:'#475569' }
+            labels: { padding:16, boxWidth:12, boxHeight:12, font:{size:12}, color:'#475569' }
           },
           tooltip: { callbacks: { label: ctx => { const u=STATE.valueUnit?' '+STATE.valueUnit:''; return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}${u} (${((ctx.parsed/total)*100).toFixed(1)}%)`; } } },
           datalabels: {
-            display: ctx => (ctx.dataset.data[ctx.dataIndex]/total)*100 >= 4,
+            display: ctx => STATE.labelModes.length > 0 && (ctx.dataset.data[ctx.dataIndex]/total)*100 >= 4,
             formatter: (val, ctx) => {
-              if (STATE.labelMode==='percent') return ((val/total)*100).toFixed(1)+'%';
-              if (STATE.labelMode==='value')   return val.toLocaleString() + (STATE.valueUnit ? ' '+STATE.valueUnit : '');
-              return ctx.chart.data.labels[ctx.dataIndex];
+              const parts = [];
+              if (STATE.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
+              if (STATE.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
+              if (STATE.labelModes.includes('value'))   parts.push(val.toLocaleString()+(STATE.valueUnit?' '+STATE.valueUnit:''));
+              return parts.length ? parts.join('\n') : '';
             },
             color: ctx => contrastColor(colors[ctx.dataIndex]),
             font: { size: STATE.fontSize, weight:'bold' },
@@ -497,7 +504,11 @@
     document.getElementById('fontSizeLabel').textContent = STATE.fontSize + 'px';
     document.getElementById('legendToggle').className = 'toggle-track ' + (STATE.showLegend?'on':'off');
     document.getElementById('donutToggle').className   = 'toggle-track ' + (STATE.isDonut?'on':'off');
-    setMode(STATE.labelMode);
+    const modes = STATE.labelModes || ['percent'];
+    ['percent','value','label'].forEach(m => {
+      const cb = document.getElementById('mode-'+m);
+      if (cb) cb.checked = modes.includes(m);
+    });
 
     renderPaletteGrid();
     renderRows();
