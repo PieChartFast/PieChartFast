@@ -297,6 +297,20 @@
           </div>
         </div>
 
+        <!-- Generate Chart Button -->
+        <button
+          @click="renderChart()"
+          class="w-full flex items-center justify-center gap-2 font-bold text-base py-3.5 rounded-2xl text-white shadow-lg focus:outline-none focus:ring-4 focus:ring-sky-300 transition-all"
+          style="background: linear-gradient(135deg, #0ea5e9, #6366f1);"
+          onmouseenter="this.style.filter='brightness(1.1)'"
+          onmouseleave="this.style.filter=''"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Generate Chart
+        </button>
+
         <!-- Download Toolbar -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Export Chart</p>
@@ -497,12 +511,12 @@
       init() {
         this.loadState();
         this.$nextTick(() => this.renderChart());
-        this.$watch('rows', () => { this.saveState(); }, { deep: true });
-        this.$watch('chartTitle', () => this.saveState());
-        this.$watch('labelMode', () => this.saveState());
-        this.$watch('fontSize', () => this.saveState());
-        this.$watch('showLegend', () => this.saveState());
-        this.$watch('isDonut', () => this.saveState());
+        this.$watch('rows', () => { this.saveState(); this.renderChart(); }, { deep: true });
+        this.$watch('chartTitle', () => { this.saveState(); this.renderChart(); });
+        this.$watch('labelMode', () => { this.saveState(); this.renderChart(); });
+        this.$watch('fontSize', () => { this.saveState(); this.renderChart(); });
+        this.$watch('showLegend', () => { this.saveState(); this.renderChart(); });
+        this.$watch('isDonut', () => { this.saveState(); this.renderChart(); });
         this.$watch('activePalette', () => this.saveState());
       },
 
