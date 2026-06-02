@@ -307,7 +307,10 @@
           </button>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
-          <h3 id="cTitleA" class="text-sm font-semibold text-slate-400 mb-3 text-center">Dataset A</h3>
+          <div class="flex items-center justify-center gap-2 mb-3">
+            <h3 id="cTitleA" class="text-sm font-semibold text-slate-400 text-center">Dataset A</h3>
+            <span id="cBadgeA" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"></span>
+          </div>
           <div id="cCanvasWrapA" style="position:relative;margin:0 auto;">
             <canvas id="cChartA"></canvas>
             <div id="cEmptyA" class="absolute inset-0 flex items-center justify-center text-slate-300 text-sm pointer-events-none">Add values above</div>
@@ -335,7 +338,10 @@
           </button>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
-          <h3 id="cTitleB" class="text-sm font-semibold text-slate-400 mb-3 text-center">Dataset B</h3>
+          <div class="flex items-center justify-center gap-2 mb-3">
+            <h3 id="cTitleB" class="text-sm font-semibold text-slate-400 text-center">Dataset B</h3>
+            <span id="cBadgeB" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"></span>
+          </div>
           <div id="cCanvasWrapB" style="position:relative;margin:0 auto;">
             <canvas id="cChartB"></canvas>
             <div id="cEmptyB" class="absolute inset-0 flex items-center justify-center text-slate-300 text-sm pointer-events-none">Add values above</div>
@@ -525,19 +531,24 @@
       if(elA) elA.textContent=totalA>0?'Total: '+totalA.toLocaleString():'';
       if(elB) elB.textContent=totalB>0?'Total: '+totalB.toLocaleString():'';
       const tA=document.getElementById('cTitleA'), tB=document.getElementById('cTitleB');
-      if(tA){tA.textContent=CSTATE.titleA||'Dataset A';tA.className='text-sm font-semibold mb-3 text-center '+(CSTATE.titleA?'text-slate-700':'text-slate-400');}
-      if(tB){tB.textContent=CSTATE.titleB||'Dataset B';tB.className='text-sm font-semibold mb-3 text-center '+(CSTATE.titleB?'text-slate-700':'text-slate-400');}
-      // Size ratio indicator
-      const ind = document.getElementById('cSizeIndicator');
-      if (ind) {
-        if (CSTATE.showSizeLabel && CSTATE.proportional && totalA>0 && totalB>0) {
-          const bigger = totalA>=totalB ? (CSTATE.titleA||'Dataset A') : (CSTATE.titleB||'Dataset B');
-          const smaller = totalA>=totalB ? (CSTATE.titleB||'Dataset B') : (CSTATE.titleA||'Dataset A');
+      if(tA){tA.textContent=CSTATE.titleA||'Dataset A';tA.className='text-sm font-semibold text-center '+(CSTATE.titleA?'text-slate-700':'text-slate-400');}
+      if(tB){tB.textContent=CSTATE.titleB||'Dataset B';tB.className='text-sm font-semibold text-center '+(CSTATE.titleB?'text-slate-700':'text-slate-400');}
+      // % larger badge next to the bigger chart title
+      const bA=document.getElementById('cBadgeA'), bB=document.getElementById('cBadgeB');
+      if (bA && bB) {
+        if (CSTATE.showSizeLabel && totalA>0 && totalB>0 && totalA!==totalB) {
           const pct = (Math.abs(totalA-totalB)/Math.min(totalA,totalB)*100).toFixed(0);
-          ind.textContent = `${bigger} is ${pct}% larger in total than ${smaller}`;
-          ind.style.display='';
-        } else { ind.style.display='none'; }
+          if (totalA>totalB) {
+            bA.textContent='+'+pct+'% larger'; bA.classList.remove('hidden');
+            bB.classList.add('hidden');
+          } else {
+            bB.textContent='+'+pct+'% larger'; bB.classList.remove('hidden');
+            bA.classList.add('hidden');
+          }
+        } else { bA.classList.add('hidden'); bB.classList.add('hidden'); }
       }
+      const ind = document.getElementById('cSizeIndicator');
+      if (ind) ind.style.display='none';
     }, 120);
   }
 
@@ -894,16 +905,8 @@
     if (!chartInstanceA && !chartInstanceB) { alert('Add data to both charts first!'); return; }
     const totalA = CSTATE.rowsA.reduce((s,r)=>s+Number(r.value),0);
     const totalB = CSTATE.rowsB.reduce((s,r)=>s+Number(r.value),0);
-    // Build % change string if enabled
-    let pctLine = '';
-    if (CSTATE.showSizeLabel && totalA>0 && totalB>0) {
-      const bigger  = totalA>=totalB ? (CSTATE.titleA||'Dataset A') : (CSTATE.titleB||'Dataset B');
-      const smaller = totalA>=totalB ? (CSTATE.titleB||'Dataset B') : (CSTATE.titleA||'Dataset A');
-      const pct = (Math.abs(totalA-totalB)/Math.min(totalA,totalB)*100).toFixed(0);
-      pctLine = `${bigger} is ${pct}% larger in total than ${smaller}`;
-    }
     const PAD = 40, GAP = 48, TITLE_H = 28;
-    const PCT_H = pctLine ? 36 : 0;
+    const PCT_H = 0;
     const wA = cA.width||0, hA = cA.height||0;
     const wB = cB.width||0, hB = cB.height||0;
     const totalW = PAD + wA + GAP + wB + PAD;
@@ -912,24 +915,35 @@
     off.width = totalW; off.height = totalH;
     const ctx = off.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,totalW,totalH);
-    // Titles
-    ctx.fillStyle = '#475569'; ctx.font = 'bold 14px Inter,system-ui,sans-serif'; ctx.textAlign='center';
+    // Build badge text
+    let badgeA='', badgeB='';
+    if (CSTATE.showSizeLabel && totalA>0 && totalB>0 && totalA!==totalB) {
+      const pct = (Math.abs(totalA-totalB)/Math.min(totalA,totalB)*100).toFixed(0);
+      if (totalA>totalB) badgeA='+'+pct+'% larger'; else badgeB='+'+pct+'% larger';
+    }
+    // Titles + badges
+    ctx.font = 'bold 14px Inter,system-ui,sans-serif'; ctx.textAlign='center';
     const lA = CSTATE.titleA||'Dataset A', lB = CSTATE.titleB||'Dataset B';
-    ctx.fillText(lA, PAD + wA/2, PAD + 18);
-    ctx.fillText(lB, PAD + wA + GAP + wB/2, PAD + 18);
+    function drawTitleWithBadge(label, badge, cx, y) {
+      ctx.fillStyle='#475569'; ctx.textAlign='center';
+      if (!badge) { ctx.fillText(label, cx, y); return; }
+      const lw = ctx.measureText(label).width;
+      ctx.font='bold 14px Inter,system-ui,sans-serif';
+      const bw = ctx.measureText(badge).width + 12;
+      const total = lw + 8 + bw;
+      const lx = cx - total/2 + lw/2;
+      ctx.fillText(label, lx, y);
+      const bx = lx + lw/2 + 8;
+      ctx.fillStyle='#d1fae5'; ctx.beginPath(); ctx.roundRect(bx, y-13, bw, 18, 4); ctx.fill();
+      ctx.fillStyle='#065f46'; ctx.font='bold 11px Inter,system-ui,sans-serif'; ctx.textAlign='left';
+      ctx.fillText(badge, bx+6, y);
+      ctx.font='bold 14px Inter,system-ui,sans-serif';
+    }
+    drawTitleWithBadge(lA, badgeA, PAD + wA/2, PAD + 18);
+    drawTitleWithBadge(lB, badgeB, PAD + wA + GAP + wB/2, PAD + 18);
     // Charts
     if (chartInstanceA) ctx.drawImage(cA, PAD, PAD+TITLE_H);
     if (chartInstanceB) ctx.drawImage(cB, PAD+wA+GAP, PAD+TITLE_H);
-    // % change banner
-    if (pctLine) {
-      const bannerY = PAD + TITLE_H + Math.max(hA,hB) + 8;
-      ctx.fillStyle = '#eff6ff';
-      ctx.beginPath();
-      ctx.roundRect(PAD, bannerY, totalW-PAD*2, 26, 6);
-      ctx.fill();
-      ctx.fillStyle = '#2563eb'; ctx.font = 'bold 12px Inter,system-ui,sans-serif'; ctx.textAlign='center';
-      ctx.fillText(pctLine, totalW/2, bannerY+17);
-    }
     const a = document.createElement('a');
     a.download = name; a.href = off.toDataURL(type,0.95); a.click();
   }
