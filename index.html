@@ -177,6 +177,7 @@
               <p class="text-sm">Add values to generate your chart</p>
             </div>
           </div>
+          <p id="singleTotalDisplay" class="hidden text-sm font-semibold text-slate-500 mt-3"></p>
         </div>
 
         <!-- Generate Button -->
@@ -451,7 +452,7 @@
     { name: 'Clean Corporate', colors: ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2','#65a30d','#9333ea'] },
     { name: 'Pastel',          colors: ['#93c5fd','#c4b5fd','#6ee7b7','#fcd34d','#fca5a5','#67e8f9','#bbf7d0','#f0abfc'] },
     { name: 'Vibrant',         colors: ['#f43f5e','#f97316','#eab308','#22c55e','#06b6d4','#6366f1','#a855f7','#ec4899'] },
-    { name: 'Monochrome',      colors: ['#0f172a','#1e293b','#334155','#475569','#64748b','#94a3b8','#cbd5e1','#e2e8f0'] }
+    { name: 'Monochrome',      colors: ['#000000','#1a1a1a','#404040','#666666','#999999','#b3b3b3','#cccccc','#e6e6e6'] }
   ];
 
   let chartInstance = null;
@@ -551,10 +552,10 @@
         if (CSTATE.showSizeLabel && totalA>0 && totalB>0 && totalA!==totalB) {
           const pct = (Math.abs(totalA-totalB)/Math.min(totalA,totalB)*100).toFixed(0);
           if (totalA>totalB) {
-            bA.textContent='+'+pct+'% larger'; bA.classList.remove('hidden');
+            bA.textContent='+'+pct+'%'; bA.classList.remove('hidden');
             bB.classList.add('hidden');
           } else {
-            bB.textContent='+'+pct+'% larger'; bB.classList.remove('hidden');
+            bB.textContent='+'+pct+'%'; bB.classList.remove('hidden');
             bA.classList.add('hidden');
           }
         } else { bA.classList.add('hidden'); bB.classList.add('hidden'); }
@@ -832,7 +833,7 @@
     STATE.showTotal = !STATE.showTotal;
     const t = document.getElementById('totalToggle');
     t.className = 'toggle-track ' + (STATE.showTotal ? 'on' : 'off');
-    saveState();
+    saveState(); rerender();
   }
 
   // ── Chart ────────────────────────────────────────────────────────────────────
@@ -888,6 +889,12 @@
     });
 
     renderStats(valid, total);
+    const td = document.getElementById('singleTotalDisplay');
+    if (td) {
+      const u = STATE.valueUnit ? ' '+STATE.valueUnit : '';
+      if (STATE.showTotal && total>0) { td.textContent='Total: '+total.toLocaleString()+u; td.classList.remove('hidden'); }
+      else td.classList.add('hidden');
+    }
   }
 
   function renderStats(valid, total) {
@@ -948,7 +955,7 @@
     let badgeA='', badgeB='';
     if (CSTATE.showSizeLabel && totalA>0 && totalB>0 && totalA!==totalB) {
       const pct = (Math.abs(totalA-totalB)/Math.min(totalA,totalB)*100).toFixed(0);
-      if (totalA>totalB) badgeA='+'+pct+'% larger'; else badgeB='+'+pct+'% larger';
+      if (totalA>totalB) badgeA='+'+pct+'%'; else badgeB='+'+pct+'%';
     }
     // Titles + badges
     ctx.font = 'bold 14px Inter,system-ui,sans-serif'; ctx.textAlign='center';
