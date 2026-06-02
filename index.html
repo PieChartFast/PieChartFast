@@ -231,7 +231,7 @@
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Dataset A</p>
           <input id="compareTitleA" type="text" placeholder="e.g. 2023 Revenue"
             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-slate-50 mb-3"
-            oninput="CSTATE.titleA=this.value;renderCompare();" />
+            oninput="CSTATE.titleA=this.value;saveCState();renderCompareCharts();" />
           <div class="grid grid-cols-[1fr_80px_32px_28px] gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wide px-1 mb-1">
             <span>Slice Name</span><span>Value</span><span class="text-center">Color</span><span></span>
           </div>
@@ -259,7 +259,7 @@
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Dataset B</p>
           <input id="compareTitleB" type="text" placeholder="e.g. 2024 Revenue"
             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-slate-50 mb-3"
-            oninput="CSTATE.titleB=this.value;renderCompare();" />
+            oninput="CSTATE.titleB=this.value;saveCState();renderCompareCharts();" />
           <div class="grid grid-cols-[1fr_80px_32px_28px] gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wide px-1 mb-1">
             <span>Slice Name</span><span>Value</span><span class="text-center">Color</span><span></span>
           </div>
@@ -282,6 +282,27 @@
       </div>
 
     </div>
+
+    <!-- Compare Export -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Export Comparison</p>
+      <div class="flex flex-wrap gap-3">
+        <button onclick="downloadComparePNG()" class="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download PNG (Side by Side)
+        </button>
+        <button onclick="downloadCompareJPG()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download JPG (Side by Side)
+        </button>
+        <button onclick="openSvgModal()" class="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+          Download SVG <span class="premium-badge">PRO</span>
+        </button>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG always free. SVG requires one-time unlock.</p>
+    </div>
+
   </div>
   </div>
 
@@ -463,6 +484,8 @@
 
     wrap.style.width  = size+'px';
     wrap.style.height = size+'px';
+    canvas.width  = size;
+    canvas.height = size;
     canvas.style.width  = size+'px';
     canvas.style.height = size+'px';
 
@@ -736,6 +759,31 @@
     const ctx = off.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,off.width,off.height);
     ctx.drawImage(src,0,0);
+    const a = document.createElement('a');
+    a.download = name; a.href = off.toDataURL(type,0.95); a.click();
+  }
+
+  function downloadComparePNG() { exportComparison('compare-chart.png','image/png'); }
+  function downloadCompareJPG() { exportComparison('compare-chart.jpg','image/jpeg'); }
+  function exportComparison(name, type) {
+    const cA = document.getElementById('cChartA');
+    const cB = document.getElementById('cChartB');
+    if (!chartInstanceA && !chartInstanceB) { alert('Add data to both charts first!'); return; }
+    const PAD = 40, GAP = 48, TITLE_H = 28;
+    const wA = cA.width||0, hA = cA.height||0;
+    const wB = cB.width||0, hB = cB.height||0;
+    const totalW = PAD + wA + GAP + wB + PAD;
+    const totalH = PAD + TITLE_H + Math.max(hA, hB) + PAD;
+    const off = document.createElement('canvas');
+    off.width = totalW; off.height = totalH;
+    const ctx = off.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,totalW,totalH);
+    ctx.fillStyle = '#475569'; ctx.font = 'bold 14px Inter,system-ui,sans-serif'; ctx.textAlign='center';
+    const lA = CSTATE.titleA||'Dataset A', lB = CSTATE.titleB||'Dataset B';
+    ctx.fillText(lA, PAD + wA/2, PAD + 18);
+    ctx.fillText(lB, PAD + wA + GAP + wB/2, PAD + 18);
+    if (chartInstanceA) ctx.drawImage(cA, PAD, PAD+TITLE_H);
+    if (chartInstanceB) ctx.drawImage(cB, PAD+wA+GAP, PAD+TITLE_H);
     const a = document.createElement('a');
     a.download = name; a.href = off.toDataURL(type,0.95); a.click();
   }
