@@ -225,7 +225,7 @@
           </label>
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="sizeLabel" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleSizeLabel(this.checked)" />
-            <span class="text-sm text-slate-700">Show size difference</span>
+            <span class="text-sm text-slate-700">Show % size change</span>
           </label>
           <p class="text-xs text-slate-400 max-w-xs">Circle area scales to dataset total</p>
         </div>
@@ -881,21 +881,44 @@
     const cA = document.getElementById('cChartA');
     const cB = document.getElementById('cChartB');
     if (!chartInstanceA && !chartInstanceB) { alert('Add data to both charts first!'); return; }
+    const totalA = CSTATE.rowsA.reduce((s,r)=>s+Number(r.value),0);
+    const totalB = CSTATE.rowsB.reduce((s,r)=>s+Number(r.value),0);
+    // Build % change string if enabled
+    let pctLine = '';
+    if (CSTATE.showSizeLabel && totalA>0 && totalB>0) {
+      const bigger  = totalA>=totalB ? (CSTATE.titleA||'Dataset A') : (CSTATE.titleB||'Dataset B');
+      const smaller = totalA>=totalB ? (CSTATE.titleB||'Dataset B') : (CSTATE.titleA||'Dataset A');
+      const pct = (Math.abs(totalA-totalB)/Math.min(totalA,totalB)*100).toFixed(0);
+      pctLine = `${bigger} is ${pct}% larger in total than ${smaller}`;
+    }
     const PAD = 40, GAP = 48, TITLE_H = 28;
+    const PCT_H = pctLine ? 36 : 0;
     const wA = cA.width||0, hA = cA.height||0;
     const wB = cB.width||0, hB = cB.height||0;
     const totalW = PAD + wA + GAP + wB + PAD;
-    const totalH = PAD + TITLE_H + Math.max(hA, hB) + PAD;
+    const totalH = PAD + TITLE_H + Math.max(hA, hB) + PCT_H + PAD;
     const off = document.createElement('canvas');
     off.width = totalW; off.height = totalH;
     const ctx = off.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,totalW,totalH);
+    // Titles
     ctx.fillStyle = '#475569'; ctx.font = 'bold 14px Inter,system-ui,sans-serif'; ctx.textAlign='center';
     const lA = CSTATE.titleA||'Dataset A', lB = CSTATE.titleB||'Dataset B';
     ctx.fillText(lA, PAD + wA/2, PAD + 18);
     ctx.fillText(lB, PAD + wA + GAP + wB/2, PAD + 18);
+    // Charts
     if (chartInstanceA) ctx.drawImage(cA, PAD, PAD+TITLE_H);
     if (chartInstanceB) ctx.drawImage(cB, PAD+wA+GAP, PAD+TITLE_H);
+    // % change banner
+    if (pctLine) {
+      const bannerY = PAD + TITLE_H + Math.max(hA,hB) + 8;
+      ctx.fillStyle = '#eff6ff';
+      ctx.beginPath();
+      ctx.roundRect(PAD, bannerY, totalW-PAD*2, 26, 6);
+      ctx.fill();
+      ctx.fillStyle = '#2563eb'; ctx.font = 'bold 12px Inter,system-ui,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(pctLine, totalW/2, bannerY+17);
+    }
     const a = document.createElement('a');
     a.download = name; a.href = off.toDataURL(type,0.95); a.click();
   }
