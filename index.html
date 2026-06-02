@@ -660,7 +660,7 @@
           legend: { display: STATE.showLegend, position:'bottom', labels:{ padding:10, boxWidth:10, boxHeight:10, font:{size:legendFont}, color:'#475569' } },
           tooltip: { callbacks: { label: ctx => { const u=CSTATE.valueUnit?' '+CSTATE.valueUnit:''; return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}${u} (${((ctx.parsed/total)*100).toFixed(1)}%)`; } } },
           datalabels: {
-            display: ctx => (ctx.dataset.data[ctx.dataIndex]/total)*100 >= 5,
+            display: ctx => STATE.labelModes.length > 0,
             formatter: (val, ctx) => {
               const parts = [];
               if (STATE.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
@@ -872,7 +872,7 @@
           },
           tooltip: { callbacks: { label: ctx => { const u=STATE.valueUnit?' '+STATE.valueUnit:''; return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}${u} (${((ctx.parsed/total)*100).toFixed(1)}%)`; } } },
           datalabels: {
-            display: ctx => STATE.labelModes.length > 0 && (ctx.dataset.data[ctx.dataIndex]/total)*100 >= 4,
+            display: ctx => STATE.labelModes.length > 0,
             formatter: (val, ctx) => {
               const parts = [];
               if (STATE.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
