@@ -212,16 +212,58 @@
   <div id="comparePanel" style="display:none">
   <div class="max-w-7xl mx-auto px-4 py-6 lg:py-8 flex flex-col gap-6">
 
-    <!-- Proportional toggle -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <p class="font-semibold text-slate-800 text-sm">Proportional Pie Charts</p>
-        <p class="text-xs text-slate-500 mt-0.5 max-w-lg">When enabled, each circle's <strong>area</strong> scales to represent the dataset's total — so a dataset twice as large gets a circle twice the area (radius × √2). Slices still show internal breakdown.</p>
+    <!-- Compare Controls -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div class="flex flex-wrap gap-x-8 gap-y-4 items-start">
+
+        <!-- Proportional -->
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Circle Size</p>
+          <label class="flex items-center gap-2 cursor-pointer select-none mt-1">
+            <div id="propToggle" class="toggle-track off" onclick="toggleProportional()"><div class="toggle-thumb"></div></div>
+            <span class="text-sm text-slate-700">Proportional Size</span>
+          </label>
+          <p class="text-xs text-slate-400 max-w-xs">Scales circle area to dataset total</p>
+        </div>
+
+        <!-- Slice Labels -->
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Slice Labels</p>
+          <label class="flex items-center gap-2 cursor-pointer select-none mt-1">
+            <input type="checkbox" id="cmode-percent" class="w-3.5 h-3.5 accent-sky-500" checked onchange="toggleMode('percent',this.checked)" />
+            <span class="text-sm text-slate-700">Percent %</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="cmode-value" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleMode('value',this.checked)" />
+            <span class="text-sm text-slate-700">Value #</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="cmode-label" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleMode('label',this.checked)" />
+            <span class="text-sm text-slate-700">Slice Name</span>
+          </label>
+        </div>
+
+        <!-- Font Size -->
+        <div class="flex flex-col gap-1 min-w-[140px]">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Label Size: <span id="cFontSizeLabel" class="font-semibold text-slate-700">13px</span></p>
+          <input id="cFontSizeSlider" type="range" min="8" max="24" step="1" value="13"
+            class="w-full accent-sky-500 mt-1" oninput="onFontSize(this.value);document.getElementById('cFontSizeLabel').textContent=this.value+'px';" />
+        </div>
+
+        <!-- Legend + Donut -->
+        <div class="flex flex-col gap-2">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Style</p>
+          <div class="flex items-center justify-between gap-4 mt-1">
+            <span class="text-sm text-slate-700">Show Legend</span>
+            <div id="cLegendToggle" class="toggle-track on" onclick="toggleLegend();syncCToggles()"><div class="toggle-thumb"></div></div>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-sm text-slate-700">Donut Style</span>
+            <div id="cDonutToggle" class="toggle-track off" onclick="toggleDonut();syncCToggles()"><div class="toggle-thumb"></div></div>
+          </div>
+        </div>
+
       </div>
-      <label class="flex items-center gap-2 cursor-pointer select-none">
-        <div id="propToggle" class="toggle-track off" onclick="toggleProportional()"><div class="toggle-thumb"></div></div>
-        <span class="text-sm font-medium text-slate-700">Proportional Size</span>
-      </label>
     </div>
 
     <!-- Two chart columns -->
@@ -351,7 +393,7 @@
       if (t===tab) { btn.classList.add('border-sky-500','text-sky-600'); btn.classList.remove('border-transparent','text-slate-500','hover:text-slate-700'); }
       else         { btn.classList.remove('border-sky-500','text-sky-600'); btn.classList.add('border-transparent','text-slate-500','hover:text-slate-700'); }
     });
-    if (tab==='compare') renderCompare();
+    if (tab==='compare') { syncCToggles(); renderCompare(); }
   }
 
   // ── State ────────────────────────────────────────────────────────────────────
@@ -418,7 +460,7 @@
           oninput="CSTATE.rows${side}[${idx}].label=this.value;saveCState();renderCompareCharts();" />
         <input type="text" inputmode="decimal" value="${row.value||''}" placeholder="0"
           class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 bg-slate-50 w-full text-right"
-          oninput="CSTATE.rows${side}[${idx}].value=parseFloat(this.value)||0;saveCState();renderCompare();" />
+          oninput="CSTATE.rows${side}[${idx}].value=parseFloat(this.value)||0;saveCState();renderCompareCharts();" />
         <div class="flex justify-center">
           <input type="color" value="${row.color}"
             class="color-swatch shadow-sm border-2 border-white ring-1 ring-slate-200"
@@ -464,6 +506,19 @@
     }, 120);
   }
 
+  function syncCToggles() {
+    const el = document.getElementById('cLegendToggle');
+    const ed = document.getElementById('cDonutToggle');
+    if (el) el.className = 'toggle-track '+(STATE.showLegend?'on':'off');
+    if (ed) ed.className = 'toggle-track '+(STATE.isDonut?'on':'off');
+    const modes = STATE.labelModes||['percent'];
+    ['percent','value','label'].forEach(m=>{ const cb=document.getElementById('cmode-'+m); if(cb) cb.checked=modes.includes(m); });
+    const fs = document.getElementById('cFontSizeSlider');
+    const fl = document.getElementById('cFontSizeLabel');
+    if(fs) fs.value=STATE.fontSize;
+    if(fl) fl.textContent=STATE.fontSize+'px';
+  }
+
   function toggleProportional() {
     CSTATE.proportional = !CSTATE.proportional;
     document.getElementById('propToggle').className = 'toggle-track '+(CSTATE.proportional?'on':'off');
@@ -478,23 +533,16 @@
   }
 
   function renderOneCompare(side, rows, total, size) {
-    const canvas  = document.getElementById('cChart'+side);
-    const empty   = document.getElementById('cEmpty'+side);
-    const wrap    = document.getElementById('cCanvasWrap'+side);
-    const instVar = side==='A' ? 'chartInstanceA' : 'chartInstanceB';
+    const canvas = document.getElementById('cChart'+side);
+    const empty  = document.getElementById('cEmpty'+side);
+    const wrap   = document.getElementById('cCanvasWrap'+side);
     if (!canvas) return;
-
-    wrap.style.width  = size+'px';
-    wrap.style.height = size+'px';
-    canvas.width  = size;
-    canvas.height = size;
-    canvas.style.width  = size+'px';
-    canvas.style.height = size+'px';
 
     const valid = rows.filter(r=>Number(r.value)>0);
     if (valid.length===0) {
       if (side==='A' && chartInstanceA) { chartInstanceA.destroy(); chartInstanceA=null; }
       if (side==='B' && chartInstanceB) { chartInstanceB.destroy(); chartInstanceB=null; }
+      wrap.style.width=size+'px'; wrap.style.height=size+'px';
       empty.style.display='flex'; return;
     }
     empty.style.display='none';
@@ -506,14 +554,27 @@
     if (side==='A' && chartInstanceA) { chartInstanceA.destroy(); chartInstanceA=null; }
     if (side==='B' && chartInstanceB) { chartInstanceB.destroy(); chartInstanceB=null; }
 
+    // Scale font with chart size — use square-root scaling so small charts don't get illegibly tiny
+    const BASE = 280;
+    const ratio = Math.sqrt(size / BASE);
+    const scaledFont = Math.max(7, Math.round(STATE.fontSize * ratio));
+    const legendFont = Math.max(7, Math.round(10 * ratio));
+
+    // Set canvas pixel dimensions BEFORE Chart.js touches it
+    canvas.width  = size;
+    canvas.height = size;
+    wrap.style.width  = size+'px';
+    wrap.style.height = size+'px';
+
     const instance = new Chart(canvas, {
       type: STATE.isDonut ? 'doughnut' : 'pie',
       data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:'#fff', borderWidth:2, hoverOffset:6 }] },
       options: {
         responsive: false,
+        layout: { padding: Math.round(size * 0.04) },
         animation: { duration:300 },
         plugins: {
-          legend: { display: STATE.showLegend, position:'bottom', labels:{ padding:12, boxWidth:10, boxHeight:10, font:{size:11}, color:'#475569' } },
+          legend: { display: STATE.showLegend, position:'bottom', labels:{ padding:10, boxWidth:10, boxHeight:10, font:{size:legendFont}, color:'#475569' } },
           tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${((ctx.parsed/total)*100).toFixed(1)}%)` } },
           datalabels: {
             display: ctx => (ctx.dataset.data[ctx.dataIndex]/total)*100 >= 5,
@@ -525,7 +586,7 @@
               return parts.length ? parts.join('\n') : '';
             },
             color: ctx => contrastColor(colors[ctx.dataIndex]),
-            font: { size: STATE.fontSize-1, weight:'bold' },
+            font: { size: scaledFont, weight:'bold' },
             anchor:'center', align:'center', clip:true
           }
         }
