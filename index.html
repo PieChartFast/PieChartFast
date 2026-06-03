@@ -916,22 +916,66 @@
   function downloadJPG() { exportCanvas('pie-chart.jpg','image/jpeg'); }
   function exportCanvas(name, type) {
     if (!chartInstance) { alert('Generate a chart first!'); return; }
-    const src = document.getElementById('pieChart');
-    const total = STATE.rows.reduce((s,r)=>s+(Number(r.value)||0),0);
+    const valid  = STATE.rows.filter(r => Number(r.value) > 0);
+    const total  = valid.reduce((s,r)=>s+Number(r.value),0);
+    const labels = valid.map(r=>r.label||'Unnamed');
+    const values = valid.map(r=>Number(r.value));
+    const colors = valid.map(r=>r.color);
     const u = STATE.valueUnit ? ' '+STATE.valueUnit : '';
     const totalLine = STATE.showTotal && total>0 ? 'Total: '+total.toLocaleString()+u : '';
-    const FOOT = totalLine ? 28 : 0;
+
+    const SIZE = 1560;
+    const FOOT = totalLine ? 52 : 0;
+    const fontSize = Math.round(STATE.fontSize * (SIZE / 520));
+    const legendSize = Math.round(12 * (SIZE / 520));
+
     const off = document.createElement('canvas');
-    off.width = src.width; off.height = src.height + FOOT;
+    off.width = SIZE; off.height = SIZE + FOOT;
+    off.style.display = 'none';
+    document.body.appendChild(off);
+
     const ctx = off.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,off.width,off.height);
-    ctx.drawImage(src,0,0);
+
+    const hiChart = new Chart(off, {
+      type: STATE.isDonut ? 'doughnut' : 'pie',
+      data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:'#fff', borderWidth:Math.round(2*(SIZE/520)), hoverOffset:0 }] },
+      options: {
+        responsive: false,
+        animation: false,
+        layout: { padding: Math.round(SIZE*0.04) },
+        plugins: {
+          legend: {
+            display: STATE.showLegend,
+            position: 'bottom',
+            labels: { padding: Math.round(16*(SIZE/520)), boxWidth: Math.round(12*(SIZE/520)), boxHeight: Math.round(12*(SIZE/520)), font:{size:legendSize}, color:'#475569' }
+          },
+          tooltip: { enabled: false },
+          datalabels: {
+            display: ctx => STATE.labelModes.length > 0,
+            formatter: (val, ctx) => {
+              const parts = [];
+              if (STATE.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
+              if (STATE.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
+              if (STATE.labelModes.includes('value'))   parts.push(val.toLocaleString()+u);
+              return parts.length ? parts.join('\n') : '';
+            },
+            color: ctx => contrastColor(colors[ctx.dataIndex]),
+            font: { size: fontSize, weight:'bold' },
+            anchor:'center', align:'center', clip:true
+          }
+        }
+      }
+    });
+
     if (totalLine) {
-      ctx.fillStyle='#64748b'; ctx.font='bold 13px Inter,system-ui,sans-serif'; ctx.textAlign='center';
-      ctx.fillText(totalLine, off.width/2, src.height+19);
+      ctx.fillStyle='#64748b'; ctx.font=`bold ${Math.round(13*(SIZE/520))}px Inter,system-ui,sans-serif`; ctx.textAlign='center';
+      ctx.fillText(totalLine, SIZE/2, SIZE + Math.round(FOOT*0.65));
     }
+
     const a = document.createElement('a');
-    a.download = name; a.href = off.toDataURL(type,0.95); a.click();
+    a.download = name; a.href = off.toDataURL(type, 0.95); a.click();
+    hiChart.destroy(); document.body.removeChild(off);
   }
 
   function downloadComparePNG() { exportComparison('compare-chart.png','image/png'); }
@@ -942,16 +986,19 @@
     if (!chartInstanceA && !chartInstanceB) { alert('Add data to both charts first!'); return; }
     const totalA = CSTATE.rowsA.reduce((s,r)=>s+Number(r.value),0);
     const totalB = CSTATE.rowsB.reduce((s,r)=>s+Number(r.value),0);
-    const PAD = 40, GAP = 48, TITLE_H = 28;
-    const FOOT_H = CSTATE.showTotal ? 28 : 0;
-    const wA = cA.width||0, hA = cA.height||0;
-    const wB = cB.width||0, hB = cB.height||0;
+    const SC = 3;
+    const PAD = 40*SC, GAP = 48*SC, TITLE_H = 28*SC;
+    const FOOT_H = CSTATE.showTotal ? 28*SC : 0;
+    const wA = (cA.width||0)*SC, hA = (cA.height||0)*SC;
+    const wB = (cB.width||0)*SC, hB = (cB.height||0)*SC;
     const totalW = PAD + wA + GAP + wB + PAD;
     const totalH = PAD + TITLE_H + Math.max(hA, hB) + FOOT_H + PAD;
     const off = document.createElement('canvas');
     off.width = totalW; off.height = totalH;
     const ctx = off.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,totalW,totalH);
+    ctx.scale(SC, SC); // scale all subsequent drawing ops
+    const PADu=PAD/SC, GAPu=GAP/SC, TITLE_Hu=TITLE_H/SC, wAu=wA/SC, hAu=hA/SC, wBu=wB/SC, hBu=hB/SC;
     // Build badge text
     let badgeA='', badgeB='';
     if (CSTATE.showSizeLabel && totalA>0 && totalB>0 && totalA!==totalB) {
@@ -976,18 +1023,18 @@
       ctx.fillText(badge, bx+6, y);
       ctx.font='bold 14px Inter,system-ui,sans-serif';
     }
-    drawTitleWithBadge(lA, badgeA, PAD + wA/2, PAD + 18);
-    drawTitleWithBadge(lB, badgeB, PAD + wA + GAP + wB/2, PAD + 18);
-    // Charts
-    if (chartInstanceA) ctx.drawImage(cA, PAD, PAD+TITLE_H);
-    if (chartInstanceB) ctx.drawImage(cB, PAD+wA+GAP, PAD+TITLE_H);
+    drawTitleWithBadge(lA, badgeA, PADu + wAu/2, PADu + 18);
+    drawTitleWithBadge(lB, badgeB, PADu + wAu + GAPu + wBu/2, PADu + 18);
+    // Charts (drawImage coords are in unscaled space; ctx.scale handles the rest)
+    if (chartInstanceA) ctx.drawImage(cA, PADu, PADu+TITLE_Hu, wAu, hAu);
+    if (chartInstanceB) ctx.drawImage(cB, PADu+wAu+GAPu, PADu+TITLE_Hu, wBu, hBu);
     // Totals below each chart
     if (CSTATE.showTotal && (totalA>0 || totalB>0)) {
-      const u = CSTATE.valueUnit ? ' '+CSTATE.valueUnit : '';
-      const footY = PAD + TITLE_H + Math.max(hA,hB) + 18;
+      const vu = CSTATE.valueUnit ? ' '+CSTATE.valueUnit : '';
+      const footY = PADu + TITLE_Hu + Math.max(hAu,hBu) + 18;
       ctx.font='bold 12px Inter,system-ui,sans-serif'; ctx.fillStyle='#64748b';
-      if (totalA>0) { ctx.textAlign='center'; ctx.fillText('Total: '+totalA.toLocaleString()+u, PAD+wA/2, footY); }
-      if (totalB>0) { ctx.textAlign='center'; ctx.fillText('Total: '+totalB.toLocaleString()+u, PAD+wA+GAP+wB/2, footY); }
+      if (totalA>0) { ctx.textAlign='center'; ctx.fillText('Total: '+totalA.toLocaleString()+vu, PADu+wAu/2, footY); }
+      if (totalB>0) { ctx.textAlign='center'; ctx.fillText('Total: '+totalB.toLocaleString()+vu, PADu+wAu+GAPu+wBu/2, footY); }
     }
     const a = document.createElement('a');
     a.download = name; a.href = off.toDataURL(type,0.95); a.click();
