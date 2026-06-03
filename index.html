@@ -916,7 +916,6 @@
     document.body.appendChild(off);
 
     const ctx = off.getContext('2d');
-    if (!STATE.transparentBg) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,off.width,off.height); }
 
     const hiChart = new Chart(off, {
       type: STATE.isDonut ? 'doughnut' : 'pie',
@@ -946,7 +945,18 @@
             anchor:'center', align:'center', clip:true
           }
         }
-      }
+      },
+      plugins: [{
+        id: 'bgFill',
+        beforeDraw: (chart) => {
+          if (!STATE.transparentBg) {
+            const c = chart.canvas.getContext('2d');
+            c.save(); c.fillStyle = '#ffffff';
+            c.fillRect(0, 0, chart.canvas.width, chart.canvas.height);
+            c.restore();
+          }
+        }
+      }]
     });
 
     if (totalLine) {
