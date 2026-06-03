@@ -238,7 +238,8 @@
             <input type="checkbox" id="propCheck" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleProportional(this.checked)" />
             <span class="text-sm text-slate-700">Proportional Size</span>
           </label>
-          <label class="flex items-center gap-2 cursor-pointer select-none">
+          <p class="text-xs text-slate-400 max-w-xs">Circle area scales to dataset total</p>
+          <label class="flex items-center gap-2 cursor-pointer select-none mt-1">
             <input type="checkbox" id="sizeLabel" class="w-3.5 h-3.5 accent-sky-500" onchange="toggleSizeLabel(this.checked)" />
             <span class="text-sm text-slate-700">Show % size change</span>
           </label>
@@ -250,7 +251,6 @@
             <input type="checkbox" id="cTransparent" class="w-3.5 h-3.5 accent-sky-500" onchange="CSTATE.transparentBg=this.checked;saveCState();document.getElementById('cTransparentNote').classList.toggle('hidden',!this.checked);" />
             <span class="text-sm text-slate-700">Transparent Background</span>
           </label>
-          <p class="text-xs text-slate-400 max-w-xs">Circle area scales to dataset total</p>
         </div>
 
         <!-- Palette -->
