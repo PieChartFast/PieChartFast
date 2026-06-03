@@ -302,7 +302,7 @@
       <!-- Chart A -->
       <div class="flex flex-col gap-4">
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Dataset A</p>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Pie Chart A</p>
           <input id="compareTitleA" type="text" placeholder="e.g. 2023 Revenue"
             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-slate-50 mb-3"
             oninput="CSTATE.titleA=this.value;saveCState();renderCompareCharts();" />
@@ -319,7 +319,7 @@
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
           <div class="flex items-center justify-center gap-2 mb-3">
-            <h3 id="cTitleA" class="text-sm font-semibold text-slate-400 text-center">Dataset A</h3>
+            <h3 id="cTitleA" class="text-sm font-semibold text-slate-400 text-center">Pie Chart A</h3>
             <span id="cBadgeA" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"></span>
           </div>
           <div id="cCanvasWrapA" style="position:relative;margin:0 auto;">
@@ -333,7 +333,7 @@
       <!-- Chart B -->
       <div class="flex flex-col gap-4">
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Dataset B</p>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Pie Chart B</p>
           <input id="compareTitleB" type="text" placeholder="e.g. 2024 Revenue"
             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-slate-50 mb-3"
             oninput="CSTATE.titleB=this.value;saveCState();renderCompareCharts();" />
@@ -350,7 +350,7 @@
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
           <div class="flex items-center justify-center gap-2 mb-3">
-            <h3 id="cTitleB" class="text-sm font-semibold text-slate-400 text-center">Dataset B</h3>
+            <h3 id="cTitleB" class="text-sm font-semibold text-slate-400 text-center">Pie Chart B</h3>
             <span id="cBadgeB" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"></span>
           </div>
           <div id="cCanvasWrapB" style="position:relative;margin:0 auto;">
@@ -544,8 +544,8 @@
       if(elA) elA.textContent=totalA>0?'Total: '+totalA.toLocaleString():'';
       if(elB) elB.textContent=totalB>0?'Total: '+totalB.toLocaleString():'';
       const tA=document.getElementById('cTitleA'), tB=document.getElementById('cTitleB');
-      if(tA){tA.textContent=CSTATE.titleA||'Dataset A';tA.className='text-sm font-semibold text-center '+(CSTATE.titleA?'text-slate-700':'text-slate-400');}
-      if(tB){tB.textContent=CSTATE.titleB||'Dataset B';tB.className='text-sm font-semibold text-center '+(CSTATE.titleB?'text-slate-700':'text-slate-400');}
+      if(tA){tA.textContent=CSTATE.titleA||'Pie Chart A';tA.className='text-sm font-semibold text-center '+(CSTATE.titleA?'text-slate-700':'text-slate-400');}
+      if(tB){tB.textContent=CSTATE.titleB||'Pie Chart B';tB.className='text-sm font-semibold text-center '+(CSTATE.titleB?'text-slate-700':'text-slate-400');}
       // % larger badge next to the bigger chart title
       const bA=document.getElementById('cBadgeA'), bB=document.getElementById('cBadgeB');
       if (bA && bB) {
@@ -960,7 +960,7 @@
     }
     // Titles + badges
     ctx.font = 'bold 14px Inter,system-ui,sans-serif'; ctx.textAlign='center';
-    const lA = CSTATE.titleA||'Dataset A', lB = CSTATE.titleB||'Dataset B';
+    const lA = CSTATE.titleA||'Pie Chart A', lB = CSTATE.titleB||'Pie Chart B';
     function drawTitleWithBadge(label, badge, cx, y) {
       ctx.fillStyle='#475569'; ctx.textAlign='center';
       if (!badge) { ctx.fillText(label, cx, y); return; }
