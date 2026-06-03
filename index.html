@@ -906,29 +906,50 @@
     const totalLine = STATE.showTotal && total>0 ? 'Total: '+total.toLocaleString()+u : '';
 
     const SIZE = 1560;
-    const FOOT = totalLine ? 52 : 0;
-    const fontSize = Math.round(STATE.fontSize * (SIZE / 520));
-    const legendSize = Math.round(12 * (SIZE / 520));
+    const SCALE = SIZE / 520;
+    const TITLE_H = STATE.chartTitle ? Math.round(52 * SCALE) : 0;
+    const FOOT = totalLine ? Math.round(52 * SCALE) : 0;
+    const fontSize = Math.round(STATE.fontSize * SCALE);
+    const legendSize = Math.round(12 * SCALE);
 
     const off = document.createElement('canvas');
-    off.width = SIZE; off.height = SIZE + FOOT;
+    off.width = SIZE; off.height = SIZE + TITLE_H + FOOT;
     off.style.display = 'none';
     document.body.appendChild(off);
 
-    const ctx = off.getContext('2d');
-
     const hiChart = new Chart(off, {
       type: STATE.isDonut ? 'doughnut' : 'pie',
-      data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:'#fff', borderWidth:Math.round(2*(SIZE/520)), hoverOffset:0 }] },
+      data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:'#fff', borderWidth:Math.round(2*SCALE), hoverOffset:0 }] },
       options: {
         responsive: false,
-        animation: false,
-        layout: { padding: Math.round(SIZE*0.04) },
+        animation: { duration: 0, onComplete: () => {
+          const ctx = off.getContext('2d');
+          // title above chart
+          if (STATE.chartTitle) {
+            ctx.fillStyle='#1e293b';
+            ctx.font=`bold ${Math.round(28*SCALE)}px Inter,system-ui,sans-serif`;
+            ctx.textAlign='center';
+            ctx.fillText(STATE.chartTitle, SIZE/2, Math.round(36*SCALE));
+          }
+          // total footer
+          if (totalLine) {
+            ctx.fillStyle='#64748b';
+            ctx.font=`bold ${Math.round(13*SCALE)}px Inter,system-ui,sans-serif`;
+            ctx.textAlign='center';
+            ctx.fillText(totalLine, SIZE/2, SIZE + TITLE_H + Math.round(FOOT*0.65));
+          }
+          const a = document.createElement('a');
+          const exportType = STATE.transparentBg ? 'image/png' : type;
+          const exportName = STATE.transparentBg ? name.replace(/\.jpg$/i, '.png') : name;
+          a.download = exportName; a.href = off.toDataURL(exportType, 0.95); a.click();
+          hiChart.destroy(); document.body.removeChild(off);
+        }},
+        layout: { padding: { top: TITLE_H, left: Math.round(SIZE*0.04), right: Math.round(SIZE*0.04), bottom: Math.round(SIZE*0.04) } },
         plugins: {
           legend: {
             display: STATE.showLegend,
             position: 'bottom',
-            labels: { padding: Math.round(16*(SIZE/520)), boxWidth: Math.round(12*(SIZE/520)), boxHeight: Math.round(12*(SIZE/520)), font:{size:legendSize}, color:'#475569' }
+            labels: { padding: Math.round(16*SCALE), boxWidth: Math.round(12*SCALE), boxHeight: Math.round(12*SCALE), font:{size:legendSize}, color:'#475569' }
           },
           tooltip: { enabled: false },
           datalabels: {
@@ -958,17 +979,6 @@
         }
       }]
     });
-
-    if (totalLine) {
-      ctx.fillStyle='#64748b'; ctx.font=`bold ${Math.round(13*(SIZE/520))}px Inter,system-ui,sans-serif`; ctx.textAlign='center';
-      ctx.fillText(totalLine, SIZE/2, SIZE + Math.round(FOOT*0.65));
-    }
-
-    const a = document.createElement('a');
-    const exportType = STATE.transparentBg ? 'image/png' : type;
-    const exportName = STATE.transparentBg ? name.replace(/\.jpg$/i, '.png') : name;
-    a.download = exportName; a.href = off.toDataURL(exportType, 0.95); a.click();
-    hiChart.destroy(); document.body.removeChild(off);
   }
 
   function downloadComparePNG() { exportComparison('compare-chart.png','image/png'); }
