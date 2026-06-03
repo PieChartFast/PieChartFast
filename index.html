@@ -152,6 +152,12 @@
             <label class="text-xs text-slate-500">Show Total in Export</label>
             <div id="totalToggle" class="toggle-track off" onclick="toggleShowTotal()"><div class="toggle-thumb"></div></div>
           </div>
+
+          <!-- Transparent BG Toggle -->
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-slate-500">Transparent Background</label>
+            <div id="transparentToggle" class="toggle-track off" onclick="toggleTransparent()"><div class="toggle-thumb"></div></div>
+          </div>
         </div>
 
         <!-- Ad Banner -->
@@ -207,7 +213,7 @@
               Download SVG <span class="premium-badge">PRO</span>
             </button>
           </div>
-          <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG always free. SVG requires one-time unlock.</p>
+          <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG always free. SVG requires one-time unlock. <span id="transparentNote" class="hidden text-amber-600 font-medium">Transparent mode: PNG only.</span></p>
         </div>
 
         <!-- Quick Stats -->
@@ -239,6 +245,10 @@
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="cShowTotal" class="w-3.5 h-3.5 accent-sky-500" onchange="CSTATE.showTotal=this.checked;saveCState();" />
             <span class="text-sm text-slate-700">Show Total in export</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="cTransparent" class="w-3.5 h-3.5 accent-sky-500" onchange="CSTATE.transparentBg=this.checked;saveCState();document.getElementById('cTransparentNote').classList.toggle('hidden',!this.checked);" />
+            <span class="text-sm text-slate-700">Transparent Background</span>
           </label>
           <p class="text-xs text-slate-400 max-w-xs">Circle area scales to dataset total</p>
         </div>
@@ -385,7 +395,7 @@
           Download SVG <span class="premium-badge">PRO</span>
         </button>
       </div>
-      <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG always free. SVG requires one-time unlock.</p>
+      <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG always free. SVG requires one-time unlock. <span id="cTransparentNote" class="hidden text-amber-600 font-medium">Transparent mode: PNG only.</span></p>
     </div>
 
   </div>
@@ -447,7 +457,8 @@
     isDonut: false,
     activePalette: 'Clean Corporate',
     valueUnit: '',
-    showTotal: false
+    showTotal: false,
+    transparentBg: false
   };
 
   const PALETTES = [
@@ -469,6 +480,7 @@
     proportional: false,
     showSizeLabel: false,
     showTotal: false,
+    transparentBg: false,
     valueUnit: '',
     rowsA: [], rowsB: []
   };
@@ -581,9 +593,13 @@
     const pc = document.getElementById('propCheck');
     const sl = document.getElementById('sizeLabel');
     const st = document.getElementById('cShowTotal');
+    const ct = document.getElementById('cTransparent');
     if(pc) pc.checked = !!CSTATE.proportional;
     if(sl) sl.checked = !!CSTATE.showSizeLabel;
     if(st) st.checked = !!CSTATE.showTotal;
+    if(ct) ct.checked = !!CSTATE.transparentBg;
+    const cn = document.getElementById('cTransparentNote');
+    if(cn) cn.classList.toggle('hidden', !CSTATE.transparentBg);
   }
 
   function toggleProportional(checked) {
@@ -832,6 +848,15 @@
     saveState(); syncCToggles(); rerender();
   }
 
+  function toggleTransparent() {
+    STATE.transparentBg = !STATE.transparentBg;
+    const t = document.getElementById('transparentToggle');
+    t.className = 'toggle-track ' + (STATE.transparentBg ? 'on' : 'off');
+    const note = document.getElementById('transparentNote');
+    if (note) note.classList.toggle('hidden', !STATE.transparentBg);
+    saveState();
+  }
+
   function toggleShowTotal() {
     STATE.showTotal = !STATE.showTotal;
     const t = document.getElementById('totalToggle');
@@ -937,7 +962,7 @@
     document.body.appendChild(off);
 
     const ctx = off.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,off.width,off.height);
+    if (!STATE.transparentBg) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,off.width,off.height); }
 
     const hiChart = new Chart(off, {
       type: STATE.isDonut ? 'doughnut' : 'pie',
@@ -976,7 +1001,9 @@
     }
 
     const a = document.createElement('a');
-    a.download = name; a.href = off.toDataURL(type, 0.95); a.click();
+    const exportType = STATE.transparentBg ? 'image/png' : type;
+    const exportName = STATE.transparentBg ? name.replace(/\.jpg$/i, '.png') : name;
+    a.download = exportName; a.href = off.toDataURL(exportType, 0.95); a.click();
     hiChart.destroy(); document.body.removeChild(off);
   }
 
@@ -998,7 +1025,7 @@
     const off = document.createElement('canvas');
     off.width = totalW; off.height = totalH;
     const ctx = off.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,totalW,totalH);
+    if (!CSTATE.transparentBg) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,totalW,totalH); }
     ctx.scale(SC, SC); // scale all subsequent drawing ops
     const PADu=PAD/SC, GAPu=GAP/SC, TITLE_Hu=TITLE_H/SC, wAu=wA/SC, hAu=hA/SC, wBu=wB/SC, hBu=hB/SC;
     // Build badge text
@@ -1039,7 +1066,9 @@
       if (totalB>0) { ctx.textAlign='center'; ctx.fillText('Total: '+totalB.toLocaleString()+vu, PADu+wAu+GAPu+wBu/2, footY); }
     }
     const a = document.createElement('a');
-    a.download = name; a.href = off.toDataURL(type,0.95); a.click();
+    const cExportType = CSTATE.transparentBg ? 'image/png' : type;
+    const cExportName = CSTATE.transparentBg ? name.replace(/\.jpg$/i, '.png') : name;
+    a.download = cExportName; a.href = off.toDataURL(cExportType,0.95); a.click();
   }
 
   // ── Modal ────────────────────────────────────────────────────────────────────
@@ -1068,7 +1097,10 @@
     document.getElementById('fontSizeLabel').textContent = STATE.fontSize + 'px';
     document.getElementById('legendToggle').className = 'toggle-track ' + (STATE.showLegend?'on':'off');
     document.getElementById('donutToggle').className   = 'toggle-track ' + (STATE.isDonut?'on':'off');
-    document.getElementById('totalToggle').className   = 'toggle-track ' + (STATE.showTotal?'on':'off');
+    document.getElementById('totalToggle').className       = 'toggle-track ' + (STATE.showTotal?'on':'off');
+    document.getElementById('transparentToggle').className = 'toggle-track ' + (STATE.transparentBg?'on':'off');
+    const tn = document.getElementById('transparentNote');
+    if (tn) tn.classList.toggle('hidden', !STATE.transparentBg);
     const modes = STATE.labelModes || ['percent'];
     ['percent','value','label'].forEach(m => {
       const cb = document.getElementById('mode-'+m);
