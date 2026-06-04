@@ -487,13 +487,13 @@
 
     <!-- Privacy / Tech -->
     <section id="privacy-tech" class="pb-8">
-      <h2 class="text-2xl font-bold text-slate-900 mb-6">A Marvel of Modern Computing: The Data Stays with You</h2>
+      <h2 class="text-2xl font-bold text-slate-900 mb-6">Serverless by Design: Your Data Stays on Your Computer</h2>
       <div class="max-w-3xl flex flex-col gap-5">
-        <p class="text-sm text-slate-500 leading-relaxed">Most online chart generators require you to upload your proprietary data to an external server, keeping logs of your internal numbers, business details, or private metrics. PieChartFast is fundamentally different.</p>
+        <p class="text-sm text-slate-500 leading-relaxed">Most online chart generators force you to upload your proprietary metrics to an external server, keeping logs of your numbers, business details, or private projects. PieChartFast is built differently.</p>
         <blockquote class="bg-sky-50 border-l-4 border-sky-400 rounded-r-xl px-6 py-4 text-sky-900 font-semibold text-sm">
-          This site runs entirely on your own computer and your browser.
+          No Server Uploads. No Tracking. Built for Absolute Privacy.
         </blockquote>
-        <p class="text-sm text-slate-500 leading-relaxed">This application is a marvel of modern computing. When you input your categories, adjust your colors, and generate your chart, 100% of the mathematical processing and image rendering happens locally inside your web browser. Because your data never touches an external server, your sensitive business metrics, private financial information, and academic projects remain completely secure, completely private, and entirely yours.</p>
+        <p class="text-sm text-slate-500 leading-relaxed">This site is engineered to run entirely within your own web browser. When you input your categories, adjust your colors, and generate a chart, 100% of the mathematical processing and image rendering happens locally on your machine. Because your data never touches an external server, your sensitive business metrics, financial information, and academic projects remain completely secure, completely private, and entirely yours.</p>
       </div>
     </section>
 
@@ -785,11 +785,11 @@
 
   // ── Persistence ──────────────────────────────────────────────────────────────
   function saveState() {
-    try { localStorage.setItem('pcf2', JSON.stringify(STATE)); } catch(e){}
+    try { localStorage.setItem('pcf3', JSON.stringify(STATE)); } catch(e){}
   }
   function loadState() {
     try {
-      const s = JSON.parse(localStorage.getItem('pcf2'));
+      const s = JSON.parse(localStorage.getItem('pcf3'));
       if (s) { Object.assign(STATE, s); return; }
     } catch(e){}
     const c = PALETTES[0].colors;
