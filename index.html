@@ -56,6 +56,7 @@
     <div class="max-w-7xl mx-auto flex gap-1">
       <button id="tab-single" onclick="switchTab('single')" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-sky-500 text-sky-600 -mb-px transition-colors">Single Chart</button>
       <button id="tab-compare" onclick="switchTab('compare')" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 -mb-px transition-colors">Compare Charts</button>
+      <button id="tab-pip" onclick="switchTab('pip')" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 -mb-px transition-colors">Pie of Pie</button>
     </div>
   </div>
 
@@ -383,6 +384,101 @@
   </div>
   </div>
 
+  <!-- ── Pie of Pie Panel ──────────────────────────────────────────────────── -->
+  <div id="pipPanel" style="display:none">
+  <div class="max-w-7xl mx-auto px-4 py-6 lg:py-8 flex flex-col gap-6">
+
+    <!-- Controls bar -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <div class="flex flex-wrap gap-x-8 gap-y-4 items-start">
+
+        <!-- Slice Labels -->
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Slice Labels</p>
+          <label class="flex items-center gap-2 cursor-pointer select-none mt-1">
+            <input type="checkbox" id="pip-mode-percent" class="w-3.5 h-3.5 accent-sky-500" checked onchange="pipToggleMode('percent',this.checked)" />
+            <span class="text-sm text-slate-700">Percent %</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="pip-mode-value" class="w-3.5 h-3.5 accent-sky-500" onchange="pipToggleMode('value',this.checked)" />
+            <span class="text-sm text-slate-700">Value #</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="pip-mode-label" class="w-3.5 h-3.5 accent-sky-500" onchange="pipToggleMode('label',this.checked)" />
+            <span class="text-sm text-slate-700">Slice Name</span>
+          </label>
+        </div>
+
+        <!-- Theme Roll -->
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Color Theme</p>
+          <div id="pipPaletteGrid" class="grid grid-cols-1 gap-1.5 mt-1"></div>
+        </div>
+
+        <!-- Style -->
+        <div class="flex flex-col gap-2">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Style</p>
+          <div class="flex items-center justify-between gap-4 mt-1">
+            <span class="text-sm text-slate-700">Show Legend</span>
+            <div id="pipLegendToggle" class="toggle-track on" onclick="PIP.showLegend=!PIP.showLegend;savePip();this.className='toggle-track '+(PIP.showLegend?'on':'off');renderPipCharts()"><div class="toggle-thumb"></div></div>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-sm text-slate-700">Donut Style</span>
+            <div id="pipDonutToggle" class="toggle-track off" onclick="PIP.isDonut=!PIP.isDonut;savePip();this.className='toggle-track '+(PIP.isDonut?'on':'off');renderPipCharts()"><div class="toggle-thumb"></div></div>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-sm text-slate-700">Dark Background</span>
+            <div id="pipDarkToggle" class="toggle-track off" onclick="PIP.darkMode=!PIP.darkMode;savePip();this.className='toggle-track '+(PIP.darkMode?'on':'off');renderPipCharts()"><div class="toggle-thumb"></div></div>
+          </div>
+        </div>
+
+        <!-- Text Size -->
+        <div class="flex flex-col gap-1 min-w-[140px]">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Text Size: <span id="pipFontLabel" class="font-semibold text-slate-700">13px</span></p>
+          <input id="pipFontSlider" type="range" min="8" max="24" step="1" value="13"
+            class="w-full accent-sky-500 mt-1"
+            oninput="PIP.fontSize=parseInt(this.value);savePip();document.getElementById('pipFontLabel').textContent=this.value+'px';renderPipCharts();" />
+        </div>
+
+        <!-- Add Pie -->
+        <div class="flex flex-col gap-1 justify-end">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pies</p>
+          <button id="pipAddBtn" onclick="pipAddChart()"
+            class="mt-1 flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 border-2 border-dashed border-violet-200 hover:border-violet-400 rounded-lg px-3 py-1.5 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Pie (max 3)
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Pie data input columns -->
+    <div id="pipColumns" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+
+    <!-- Chart preview row -->
+    <div id="pipPreviewRow" class="flex flex-wrap justify-center items-center gap-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 min-h-[320px]"></div>
+
+    <!-- Export -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Export Pie of Pie</p>
+      <div class="flex flex-wrap gap-3">
+        <button onclick="exportPip('pie-of-pie.png','image/png')" class="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download PNG
+        </button>
+        <button onclick="exportPip('pie-of-pie.jpg','image/jpeg')" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download JPG
+        </button>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG free. No watermarks.</p>
+    </div>
+
+  </div>
+  </div>
+  <!-- ── End Pie of Pie Panel ──────────────────────────────────────────────── -->
+
   <!-- ── SEO Content Sections ─────────────────────────────────────────────── -->
   <div class="max-w-7xl mx-auto px-4 py-16 flex flex-col gap-20">
 
@@ -507,14 +603,16 @@
   let activeTab = 'single';
   function switchTab(tab) {
     activeTab = tab;
-    document.querySelector('main').style.display         = tab==='single' ? '' : 'none';
-    document.getElementById('comparePanel').style.display = tab==='compare' ? '' : 'none';
-    ['single','compare'].forEach(t => {
+    document.querySelector('main').style.display              = tab==='single'  ? '' : 'none';
+    document.getElementById('comparePanel').style.display     = tab==='compare' ? '' : 'none';
+    document.getElementById('pipPanel').style.display         = tab==='pip'     ? '' : 'none';
+    ['single','compare','pip'].forEach(t => {
       const btn = document.getElementById('tab-'+t);
       if (t===tab) { btn.classList.add('border-sky-500','text-sky-600'); btn.classList.remove('border-transparent','text-slate-500','hover:text-slate-700'); }
       else         { btn.classList.remove('border-sky-500','text-sky-600'); btn.classList.add('border-transparent','text-slate-500','hover:text-slate-700'); }
     });
     if (tab==='compare') { syncCToggles(); renderCompare(); }
+    if (tab==='pip') { renderPipCharts(); }
   }
 
   // ── State ────────────────────────────────────────────────────────────────────
@@ -764,6 +862,578 @@
       }
     });
     if (side==='A') chartInstanceA=instance; else chartInstanceB=instance;
+  }
+
+  // ── Pie of Pie State ─────────────────────────────────────────────────────────
+  const PIP = {
+    charts: [],
+    labelModes: ['percent'],
+    fontSize: 13,
+    showLegend: true,
+    isDonut: false,
+    darkMode: false,
+    activePalette: 'Modern Corporate'
+  };
+  const pipInstances = [];
+
+  // ── Nested "Theme Roll" palettes (parent-child cascade) ──────────────────────
+  // Pie 1 = distinct brand triad (parent hue FIRST, since Slice A is the bridge).
+  // Pie 2/3 = monochromatic tiers generated from the root hue, each tier lighter.
+  const NESTED_THEMES = [
+    { name:'Modern Corporate', pie1:['#14B8A6','#0A2540','#64748B'] },
+    { name:'Nordic Earth',     pie1:['#7C8A4E','#C0683C','#CBA14A'] },
+    { name:'Cyberpunk Glow',   pie1:['#A855F7','#EC4899','#22D3EE'], dark:true },
+    { name:'Sequential Rainbow',pie1:['#F43F5E','#2563EB','#FACC15'], hueShift:15, hueSpread:25 }
+  ];
+
+  function rgbToHsl(r,g,b){
+    r/=255; g/=255; b/=255;
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b); let h,s,l=(mx+mn)/2;
+    if(mx===mn){ h=s=0; }
+    else { const d=mx-mn; s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+      switch(mx){ case r:h=(g-b)/d+(g<b?6:0);break; case g:h=(b-r)/d+2;break; default:h=(r-g)/d+4; } h/=6; }
+    return { h:h*360, s:s*100, l:l*100 };
+  }
+  function hexToHsl(hex){ const {r,g,b}=hexToRgb(hex); return rgbToHsl(r,g,b); }
+  function hslToHex(h,s,l){
+    h=((h%360)+360)%360; s=Math.max(0,Math.min(100,s))/100; l=Math.max(0,Math.min(100,l))/100;
+    const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+    let r,g,b;
+    if(h<60){[r,g,b]=[c,x,0];} else if(h<120){[r,g,b]=[x,c,0];} else if(h<180){[r,g,b]=[0,c,x];}
+    else if(h<240){[r,g,b]=[0,x,c];} else if(h<300){[r,g,b]=[x,0,c];} else {[r,g,b]=[c,0,x];}
+    const to=v=>('0'+Math.round((v+m)*255).toString(16)).slice(-2);
+    return '#'+to(r)+to(g)+to(b);
+  }
+  // Generate a child pie's palette from the root hue. depth 1 = Pie 2, depth 2 = Pie 3.
+  function tierPalette(rootHex, depth, count, opts={}){
+    const { hueShift=0, hueSpread=0 } = opts;
+    const base = hexToHsl(rootHex);
+    const startL = depth===1 ? Math.min(Math.max(base.l,46),58) : 70;
+    const spanL  = depth===1 ? 24 : 16;
+    const S      = depth===1 ? Math.max(42, base.s-4) : Math.max(32, base.s-20);
+    const out=[];
+    for(let i=0;i<count;i++){
+      const t = count>1 ? i/(count-1) : 0;
+      out.push(hslToHex(base.h + hueShift*depth + hueSpread*t, S, Math.min(92, startL + t*spanL)));
+    }
+    return out;
+  }
+  // Colors for a single pie under the active theme (Pie 1 = triad, else generated tier).
+  // Child tiers derive from the CURRENT Pie 1 Slice A color so manual edits cascade.
+  function pipPaletteFor(ci){
+    const theme = NESTED_THEMES.find(t=>t.name===PIP.activePalette) || NESTED_THEMES[0];
+    if (ci===0) return theme.pie1.slice();
+    const root = (PIP.charts[0] && PIP.charts[0].rows[0] && PIP.charts[0].rows[0].color) || theme.pie1[0];
+    const count = PIP.charts[ci] ? PIP.charts[ci].rows.length : 3;
+    return tierPalette(root, ci, count, theme);
+  }
+  // Commit a slice color edit; if it's Pie 1's bridge (Slice A), re-cascade children.
+  function pipCommitColor(ci, ri, value){
+    PIP.charts[ci].rows[ri].color = value;
+    if (ci===0 && ri===0){
+      for (let k=1; k<PIP.charts.length; k++){
+        const pal = pipPaletteFor(k);
+        PIP.charts[k].rows.forEach((r,i)=> r.color = pal[i % pal.length]);
+      }
+    }
+    savePip(); renderPipColumns(); renderPipCharts();
+  }
+  // Recolor every pie via the cascade (used on theme click / migration).
+  function applyPipTheme(name){
+    const theme = NESTED_THEMES.find(t=>t.name===name) || NESTED_THEMES[0];
+    PIP.activePalette = theme.name;
+    PIP.darkMode = !!theme.dark;
+    PIP.charts.forEach((ch, ci) => {
+      const pal = ci===0 ? theme.pie1 : tierPalette(theme.pie1[0], ci, ch.rows.length, theme);
+      ch.rows = ch.rows.map((r,i) => ({ ...r, color: pal[i % pal.length] }));
+    });
+  }
+
+  function savePip() { try { localStorage.setItem('pcfpip', JSON.stringify(PIP)); } catch(e){} }
+  function loadPip() {
+    try {
+      const s = JSON.parse(localStorage.getItem('pcfpip'));
+      if (s && Array.isArray(s.charts)) {
+        Object.assign(PIP, s);
+        // Migrate old flat-palette names to the nested theme system
+        if (!NESTED_THEMES.some(t => t.name === PIP.activePalette)) {
+          applyPipTheme('Modern Corporate');
+        }
+        return;
+      }
+    } catch(e){}
+    PIP.charts = [
+      { title:'Pie 1', rows:[{id:uid(),label:'Slice A',value:50,color:'#000'},{id:uid(),label:'Slice B',value:30,color:'#000'},{id:uid(),label:'Slice C',value:20,color:'#000'}] },
+      { title:'Pie 2', rows:[{id:uid(),label:'Slice A',value:55,color:'#000'},{id:uid(),label:'Slice B',value:30,color:'#000'},{id:uid(),label:'Slice C',value:15,color:'#000'}] }
+    ];
+    applyPipTheme('Modern Corporate');
+  }
+
+  function pipToggleMode(mode, checked) {
+    if (checked) { if (!PIP.labelModes.includes(mode)) PIP.labelModes.push(mode); }
+    else { PIP.labelModes = PIP.labelModes.filter(m=>m!==mode); }
+    savePip(); renderPipCharts();
+  }
+
+  function selectPipSlice(ci, ri, checked) {
+    PIP.charts[ci].pipSliceIdx = checked ? ri : -1;
+    savePip();
+    renderPipColumns();
+    renderPipCharts();
+  }
+
+  function pipAddChart() {
+    if (PIP.charts.length >= 3) return;
+    PIP.charts.push({ title:'Pie '+(PIP.charts.length+1), rows:[
+      {id:uid(),label:'Slice A',value:55,color:'#000'},
+      {id:uid(),label:'Slice B',value:30,color:'#000'},
+      {id:uid(),label:'Slice C',value:15,color:'#000'}
+    ]});
+    const ci = PIP.charts.length - 1;
+    const pal = pipPaletteFor(ci);
+    PIP.charts[ci].rows.forEach((r,i)=> r.color = pal[i % pal.length]);
+    savePip(); renderPipUI();
+  }
+
+  function pipRemoveChart(i) {
+    if (PIP.charts.length <= 1) return;
+    pipInstances[i]?.destroy();
+    pipInstances.splice(i, 1);
+    PIP.charts.splice(i, 1);
+    savePip(); renderPipUI();
+  }
+
+  function pipAddRow(ci) {
+    const rows = PIP.charts[ci].rows;
+    rows.push({id:uid(),label:'',value:0,color:'#000'});
+    // Re-apply this pie's themed palette so the new slice fits the ramp
+    const pal = pipPaletteFor(ci);
+    rows.forEach((r,i)=> r.color = pal[i % pal.length]);
+    savePip(); renderPipColumns(); renderPipCharts();
+  }
+
+  function pipRemoveRow(ci, ri) {
+    PIP.charts[ci].rows.splice(ri,1);
+    // Re-flow remaining colors so the ramp stays smooth
+    const pal = pipPaletteFor(ci);
+    PIP.charts[ci].rows.forEach((r,i)=> r.color = pal[i % pal.length]);
+    savePip(); renderPipColumns(); renderPipCharts();
+  }
+
+  function renderPipPaletteGrid() {
+    const grid = document.getElementById('pipPaletteGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    NESTED_THEMES.forEach(t => {
+      const child = tierPalette(t.pie1[0], 1, 4, t);
+      const btn = document.createElement('button');
+      btn.className = 'palette-btn border rounded-lg p-2 flex flex-col items-start gap-1.5 transition-all text-left border-slate-200 hover:border-slate-300'+(PIP.activePalette===t.name?' active':'');
+      btn.innerHTML = `
+        <div class="flex items-center gap-1">
+          ${t.pie1.map(c=>`<span class="w-3.5 h-3.5 rounded-full ring-1 ring-black/5" style="background:${c}"></span>`).join('')}
+          <span class="text-slate-300 text-[10px] px-0.5">&#8594;</span>
+          <span class="inline-flex rounded-full overflow-hidden ring-1 ring-black/5">${child.map(c=>`<span class="w-2.5 h-3.5" style="background:${c}"></span>`).join('')}</span>
+        </div>
+        <span class="text-xs font-medium text-slate-600">${t.name}</span>`;
+      btn.onclick = () => {
+        applyPipTheme(t.name);
+        savePip(); renderPipPaletteGrid(); renderPipUI();
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  function renderPipColumns() {
+    const wrap = document.getElementById('pipColumns');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    wrap.style.gridTemplateColumns = 'repeat('+Math.min(PIP.charts.length,3)+',1fr)';
+    PIP.charts.forEach((chart, ci) => {
+      const col = document.createElement('div');
+      col.className = 'bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col gap-2';
+      const colTemplate = '1fr 70px 32px 28px';
+      const header = `
+        <div class="flex items-center justify-between mb-1">
+          <input type="text" value="${escHtml(chart.title)}" placeholder="Pie title"
+            class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-violet-300 bg-slate-50 flex-1 mr-2"
+            oninput="PIP.charts[${ci}].title=this.value;savePip();renderPipCharts();" />
+          ${PIP.charts.length > 1 ? `<button onclick="pipRemoveChart(${ci})" class="text-xs text-slate-300 hover:text-rose-400 transition-colors" title="Remove pie">✕</button>` : ''}
+        </div>
+        <div class="grid gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wide px-1 mb-1" style="grid-template-columns:${colTemplate}">
+          <span>Slice</span><span>Value</span><span class="text-center">Color</span><span></span>
+        </div>
+        `;
+      col.innerHTML = header;
+      const rowsWrap = document.createElement('div');
+      rowsWrap.className = 'flex flex-col gap-1.5';
+      chart.rows.forEach((row, ri) => {
+        const isBridge = ci < PIP.charts.length - 1 && ri === 0;
+        const nextTitle = isBridge ? (PIP.charts[ci+1].title||'Pie '+(ci+2)) : '';
+        const d = document.createElement('div');
+        d.className = 'grid gap-2 items-center' + (isBridge ? ' bg-violet-50 ring-2 ring-violet-300 rounded-lg p-1.5' : '');
+        d.style.gridTemplateColumns = colTemplate;
+        d.innerHTML = `
+          <div class="relative w-full">
+            ${isBridge ? '<span class="absolute -top-2 -left-1 text-[9px] font-bold text-white bg-violet-500 rounded px-1 py-0.5 leading-none shadow z-10">\u2192 '+escHtml(nextTitle.toUpperCase())+'</span>' : ''}
+            <input type="text" value="${escHtml(row.label)}" placeholder="Label"
+              class="border ${isBridge ? 'border-violet-300' : 'border-slate-200'} rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 bg-slate-50 w-full"
+              oninput="PIP.charts[${ci}].rows[${ri}].label=this.value;savePip();renderPipCharts();" />
+          </div>
+          <input type="text" inputmode="decimal" value="${row.value||''}" placeholder="0"
+            class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 bg-slate-50 w-full text-right"
+            oninput="PIP.charts[${ci}].rows[${ri}].value=parseFloat(this.value)||0;savePip();renderPipCharts();" />
+          <div class="flex justify-center">
+            <input type="color" value="${row.color}" class="color-swatch shadow-sm border-2 border-white ring-1 ring-slate-200"
+              title="${ci===0&&ri===0 ? 'Pie 1 Slice A — drives the child pie colors' : 'Click to change color'}"
+              oninput="PIP.charts[${ci}].rows[${ri}].color=this.value;savePip();renderPipCharts();"
+              onchange="pipCommitColor(${ci},${ri},this.value);" />
+          </div>
+          <button onclick="pipRemoveRow(${ci},${ri})" class="flex items-center justify-center w-6 h-6 rounded-md text-slate-300 hover:text-rose-400 hover:bg-rose-50 transition-colors" title="Remove">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>`;
+        rowsWrap.appendChild(d);
+      });
+      col.appendChild(rowsWrap);
+      const addBtn = document.createElement('button');
+      addBtn.className = 'mt-2 w-full flex items-center justify-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 border-2 border-dashed border-violet-200 hover:border-violet-400 rounded-lg py-2 transition-colors';
+      addBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Add Slice`;
+      addBtn.onclick = () => pipAddRow(ci);
+      col.appendChild(addBtn);
+      wrap.appendChild(col);
+    });
+    // Disable add button if at max
+    const addPieBtn = document.getElementById('pipAddBtn');
+    if (addPieBtn) addPieBtn.disabled = PIP.charts.length >= 3;
+  }
+
+  function renderPipCharts() {
+    const row = document.getElementById('pipPreviewRow');
+    if (!row) return;
+    // Destroy old instances
+    pipInstances.forEach(inst => inst?.destroy());
+    pipInstances.length = 0;
+    row.innerHTML = '';
+    const dark = !!PIP.darkMode;
+    // Dark / light preview surface
+    row.style.background = dark ? '#0b0f17' : '';
+    row.style.borderColor = dark ? '#1e293b' : '';
+    const darkToggle = document.getElementById('pipDarkToggle');
+    if (darkToggle) darkToggle.className = 'toggle-track ' + (dark ? 'on' : 'off');
+    const titleColor = dark ? '#e2e8f0' : '#475569';
+    const legendColor = dark ? '#cbd5e1' : '#475569';
+    const SIZE = 260;
+    const BASE = 260;
+    PIP.charts.forEach((chart, ci) => {
+      const valid = chart.rows.filter(r=>Number(r.value)>0);
+      if (!valid.length) return;
+      const total = valid.reduce((s,r)=>s+Number(r.value),0);
+      const labels = valid.map(r=>r.label||'Unnamed');
+      const values = valid.map(r=>Number(r.value));
+      const colors = valid.map(r=>r.color);
+      const ratio = Math.sqrt(SIZE/BASE);
+      const scaledFont = Math.max(7, Math.round(PIP.fontSize*ratio));
+      const legendFont = Math.max(7, Math.round(10*ratio));
+      // Wrapper
+      const wrap = document.createElement('div');
+      wrap.className = 'flex flex-col items-center gap-1';
+      // Pie of Pie: always explode slice 0 of Pie 1 toward Pie 2
+      const pipIdx = (ci < PIP.charts.length - 1) ? 0 : -1;
+      // Pie 2+ subtitle showing which slice it expands
+      const prevChart = ci > 0 ? PIP.charts[ci-1] : null;
+      const expandedSlice = prevChart && prevChart.rows[0]
+        ? (prevChart.rows[0].label || 'Slice A') : null;
+      const titleEl = document.createElement('p');
+      titleEl.className = 'text-sm font-semibold text-center';
+      titleEl.style.color = titleColor;
+      if (expandedSlice) {
+        titleEl.innerHTML = escHtml(chart.title||'Pie '+(ci+1)) + ' <span class="text-xs font-normal text-violet-500">\u21b3 '+escHtml(expandedSlice)+'</span>';
+      } else {
+        titleEl.textContent = chart.title || 'Pie '+(ci+1);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE; canvas.height = SIZE;
+      canvas.style.width = SIZE+'px'; canvas.style.height = SIZE+'px';
+      wrap.appendChild(titleEl);
+      wrap.appendChild(canvas);
+      row.appendChild(wrap);
+      // Gap div between charts (connector SVG drawn after all charts render)
+      if (ci > 0) {
+        const gap = document.createElement('div');
+        gap.style.width = '48px';
+        gap.className = 'self-center flex-shrink-0';
+        row.insertBefore(gap, wrap);
+      }
+      // Rotate Pie 1 so Slice A is centered on the RIGHT (3 o'clock, toward Pie 2)
+      // Chart.js rotation = degrees clockwise from top. right = 90deg.
+      const sliceADeg = pipIdx === 0 ? (values[0] / values.reduce((s,v)=>s+v,0)) * 360 : 0;
+      const rotation = pipIdx === 0 ? 90 - (sliceADeg / 2) : 0;
+      const offsets = values.map((_, i) => (pipIdx >= 0 && i === 0) ? Math.round(SIZE * 0.08) : 0);
+      const borderColors = values.map((_, i) => (pipIdx >= 0 && i === 0) ? colors[0] : (dark ? '#0b0f17' : '#fff'));
+      const borderWidths = values.map((_, i) => (pipIdx >= 0 && i === 0) ? 4 : 2);
+
+      const inst = new Chart(canvas, {
+        type: PIP.isDonut ? 'doughnut' : 'pie',
+        data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:borderColors, borderWidth:borderWidths, hoverOffset:6, offset: offsets }] },
+        options: {
+          responsive: false,
+          rotation: rotation,
+          layout: { padding: Math.round(SIZE*0.1) },
+          animation: false,
+          plugins: {
+            legend: { display: PIP.showLegend, position:'bottom', labels:{ padding:8, boxWidth:10, boxHeight:10, font:{size:legendFont}, color:legendColor } },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${((ctx.parsed/total)*100).toFixed(1)}%)` } },
+            datalabels: {
+              display: ctx => PIP.labelModes.length > 0 || (pipIdx >= 0 && ctx.dataIndex === 0),
+              formatter: (val, ctx) => {
+                const parts = [];
+                if (PIP.labelModes.includes('label') || (pipIdx >= 0 && ctx.dataIndex === 0)) parts.push(ctx.chart.data.labels[ctx.dataIndex]);
+                if (PIP.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
+                if (PIP.labelModes.includes('value'))   parts.push(val.toLocaleString());
+                return parts.length ? parts.join('\n') : '';
+              },
+              color: ctx => contrastColor(colors[ctx.dataIndex]),
+              font: ctx => ({ size: scaledFont, weight: pipIdx >= 0 && ctx.dataIndex === 0 ? 'bold' : 'normal' }),
+              anchor:'center', align:'center', clip:true
+            }
+          }
+        }
+      });
+      pipInstances.push(inst);
+    });
+    // Draw connectors after all charts rendered
+    requestAnimationFrame(() => drawPipConnectors());
+  }
+
+  function drawPipConnectors() {
+    const row = document.getElementById('pipPreviewRow');
+    if (!row) return;
+    // Remove old overlay
+    const old = document.getElementById('pipConnectorSvg');
+    if (old) old.remove();
+    if (pipInstances.length < 2) return;
+
+    const rowRect = row.getBoundingClientRect();
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.id = 'pipConnectorSvg';
+    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible';
+    row.style.position = 'relative';
+    row.appendChild(svg);
+
+    pipInstances.forEach((instA, idx) => {
+      if (idx >= pipInstances.length - 1) return;
+      const instB = pipInstances[idx + 1];
+      const chart = PIP.charts[idx];
+      const pipIdx = 0; // every pie's Slice A feeds the next pie
+
+      const metaA = instA.getDatasetMeta(0);
+      const metaB = instB.getDatasetMeta(0);
+      if (!metaA.data[pipIdx] || !metaB.data[0]) return;
+
+      const sliceA = metaA.data[pipIdx];
+      const canvasA = instA.canvas.getBoundingClientRect();
+      const canvasB = instB.canvas.getBoundingClientRect();
+
+      // Exact geometry from Chart.js
+      const cx1 = canvasA.left - rowRect.left + sliceA.x;
+      const cy1 = canvasA.top  - rowRect.top  + sliceA.y;
+      const R1  = sliceA.outerRadius;
+      // Clamp slice edges to the right hemisphere so huge bridge slices
+      // funnel from top/bottom instead of wrapping around to the left
+      const HALF = Math.PI/2;
+      const nrm = a => { while(a>Math.PI)a-=2*Math.PI; while(a<-Math.PI)a+=2*Math.PI; return a; };
+      const sa  = Math.max(-HALF, Math.min(HALF, nrm(sliceA.startAngle)));
+      const ea  = Math.max(-HALF, Math.min(HALF, nrm(sliceA.endAngle)));
+      // Start points: arc edge corners (sliceA.x/y already includes the explode offset)
+      const x1s = cx1 + Math.cos(sa) * R1;
+      const y1s = cy1 + Math.sin(sa) * R1;
+      const x2s = cx1 + Math.cos(ea) * R1;
+      const y2s = cy1 + Math.sin(ea) * R1;
+
+      // End points: next pie's circle. Use a NON-exploded slice (last index)
+      // for the true center, since slice 0 may be offset.
+      const centerSlice = metaB.data[metaB.data.length - 1];
+      const cx2 = canvasB.left - rowRect.left + centerSlice.x;
+      const cy2 = canvasB.top  - rowRect.top  + centerSlice.y;
+      const R2  = centerSlice.outerRadius;
+      const x1e = cx2 - Math.cos(Math.PI/3) * R2;
+      const y1e = cy2 - Math.sin(Math.PI/3) * R2;
+      const x2e = cx2 - Math.cos(Math.PI/3) * R2;
+      const y2e = cy2 + Math.sin(Math.PI/3) * R2;
+
+      // Slice color for the lines
+      const sliceColor = PIP.charts[idx].rows.filter(r=>Number(r.value)>0)[pipIdx]?.color || '#94a3b8';
+
+      const mkLine = (x1,y1,x2,y2) => {
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+        line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+        line.setAttribute('stroke', sliceColor);
+        line.setAttribute('stroke-width','1.5');
+        line.setAttribute('stroke-opacity','0.45');
+        svg.appendChild(line);
+      };
+      mkLine(x1s, y1s, x1e, y1e);
+      mkLine(x2s, y2s, x2e, y2e);
+    });
+  }
+
+  function renderPipUI() {
+    renderPipPaletteGrid();
+    renderPipColumns();
+    renderPipCharts();
+  }
+
+  function exportPip(name, type) {
+    const items = [];
+    PIP.charts.forEach((chart, ci) => {
+      const valid = chart.rows.filter(r=>Number(r.value)>0);
+      if (valid.length) items.push({ chart, valid, ci });
+    });
+    if (!items.length) { alert('Add data to at least one pie first!'); return; }
+
+    const dark = !!PIP.darkMode;
+    const bgColor = dark ? '#0b0f17' : '#ffffff';
+    const sliceBorder = dark ? '#0b0f17' : '#fff';
+    const txtColor = dark ? '#e2e8f0' : '#475569';
+    const SC = 3;
+    const BASE_SIZE = 280 * SC;      // Pie 1 canvas size
+    const SHRINK = 0.75;             // each subsequent pie is 75% of previous
+    const PAD = 44 * SC;
+    const GAP = 64 * SC;
+    const TITLE_H = 30 * SC;
+
+    // Pre-compute sizes and x-positions for each pie
+    const sizes = items.map((_, i) => Math.round(BASE_SIZE * Math.pow(SHRINK, i)));
+    const maxSize = sizes[0];
+    const totalW = PAD + sizes.reduce((s,sz)=>s+sz,0) + (items.length-1)*GAP + PAD;
+    const totalH = PAD + TITLE_H + maxSize + PAD;
+
+    // X left edge and vertical center for each pie on the composite canvas
+    const xs = [];
+    let cursor = PAD;
+    sizes.forEach(sz => { xs.push(cursor); cursor += sz + GAP; });
+    // Each pie is vertically centered relative to the tallest (Pie 1)
+    const ys = sizes.map(sz => PAD + TITLE_H + Math.round((maxSize - sz) / 2));
+
+    const off = document.createElement('canvas');
+    off.width = totalW; off.height = totalH;
+    const ctx = off.getContext('2d');
+    ctx.fillStyle = bgColor; ctx.fillRect(0,0,totalW,totalH);
+
+    // Render each chart onto a hidden offscreen canvas synchronously
+    const rendered = items.map(({ chart, valid, ci }, idx) => {
+      const sz = sizes[idx];
+      const total = valid.reduce((s,r)=>s+Number(r.value),0);
+      const labels = valid.map(r=>r.label||'Unnamed');
+      const values = valid.map(r=>Number(r.value));
+      const colors = valid.map(r=>r.color);
+      const scaledFont = Math.round(PIP.fontSize * Math.sqrt(SC * (sz/BASE_SIZE)));
+      const legendFont = Math.round(10 * Math.sqrt(SC * (sz/BASE_SIZE)));
+      // Explode selected slice on Pie 1 (ci===0) only
+      const pipSliceIdx = (ci < items.length - 1) ? 0 : -1;
+
+      const tmp = document.createElement('canvas');
+      tmp.width = sz; tmp.height = sz;
+      tmp.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+      document.body.appendChild(tmp);
+      tmp.getContext('2d').fillStyle = bgColor;
+      tmp.getContext('2d').fillRect(0,0,sz,sz);
+
+      const expOffsets = values.map((_, i) => (pipSliceIdx >= 0 && i === 0) ? Math.round(sz * 0.08) : 0);
+      const expSliceADeg = pipSliceIdx >= 0 ? (values[0] / values.reduce((s,v)=>s+v,0)) * 360 : 0;
+      const expRotation = pipSliceIdx >= 0 ? 90 - (expSliceADeg / 2) : 0;
+      const tmpChart = new Chart(tmp, {
+        type: PIP.isDonut ? 'doughnut' : 'pie',
+        data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:sliceBorder, borderWidth:Math.round(2*SC), hoverOffset:0, offset: expOffsets }] },
+        options: {
+          responsive: false,
+          animation: false,
+          rotation: expRotation,
+          layout: { padding: Math.round(sz * 0.1) },
+          plugins: {
+            legend: { display: PIP.showLegend, position:'bottom', labels:{ padding:Math.round(6*SC*(sz/BASE_SIZE)), boxWidth:Math.round(10*SC*(sz/BASE_SIZE)), boxHeight:Math.round(10*SC*(sz/BASE_SIZE)), font:{size:legendFont}, color:txtColor } },
+            tooltip: { enabled:false },
+            datalabels: {
+              display: c2 => PIP.labelModes.length > 0 || (pipSliceIdx >= 0 && c2.dataIndex === 0),
+              formatter: (val, c2) => {
+                const parts = [];
+                if (PIP.labelModes.includes('label') || (pipSliceIdx >= 0 && c2.dataIndex === 0)) parts.push(c2.chart.data.labels[c2.dataIndex]);
+                if (PIP.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
+                if (PIP.labelModes.includes('value'))   parts.push(val.toLocaleString());
+                return parts.length ? parts.join('\n') : '';
+              },
+              color: c2 => contrastColor(colors[c2.dataIndex]),
+              font: { size: scaledFont, weight:'bold' },
+              anchor:'center', align:'center', clip:true
+            }
+          }
+        }
+      });
+
+      // Draw title + chart onto composite
+      const x = xs[idx], y = ys[idx];
+      ctx.font = `bold ${Math.round(13*SC*(sz/BASE_SIZE))}px Inter,system-ui,sans-serif`;
+      ctx.fillStyle = txtColor; ctx.textAlign = 'center';
+      ctx.fillText(chart.title||'Pie '+(ci+1), x + sz/2, PAD + Math.round(22*SC*(sz/BASE_SIZE)));
+      ctx.drawImage(tmp, x, y, sz, sz);
+
+      // Read exact geometry from Chart.js meta before destroying
+      const metaA = tmpChart.getDatasetMeta(0);
+      const geo = { x, y, sz, pipSliceIdx, colors, chart, metaA };
+      tmpChart.destroy();
+      document.body.removeChild(tmp);
+
+      return geo;
+    });
+
+    // Draw connector lines using exact Chart.js geometry
+    rendered.forEach((r, idx) => {
+      if (idx >= rendered.length - 1) return;
+      const next = rendered[idx + 1];
+      if (r.pipSliceIdx < 0 || !r.metaA.data[r.pipSliceIdx]) return;
+
+      const sliceA = r.metaA.data[r.pipSliceIdx];
+      // Chart.js meta coords are relative to the tmp canvas origin
+      const cx1 = r.x + sliceA.x;
+      const cy1 = r.y + sliceA.y;
+      const R1  = sliceA.outerRadius;
+      // Clamp to right hemisphere so huge bridge slices funnel from top/bottom
+      const HALF = Math.PI/2;
+      const nrm = a => { while(a>Math.PI)a-=2*Math.PI; while(a<-Math.PI)a+=2*Math.PI; return a; };
+      const sa  = Math.max(-HALF, Math.min(HALF, nrm(sliceA.startAngle)));
+      const ea  = Math.max(-HALF, Math.min(HALF, nrm(sliceA.endAngle)));
+
+      // Start points: two arc-edge corners (meta x/y already includes the offset)
+      const x1s = cx1 + Math.cos(sa) * R1;
+      const y1s = cy1 + Math.sin(sa) * R1;
+      const x2s = cx1 + Math.cos(ea) * R1;
+      const y2s = cy1 + Math.sin(ea) * R1;
+
+      // End points: top/bottom of next pie's circle. Use a NON-exploded slice
+      // (last index) for the true center, since slice 0 may be offset.
+      const nextData = next.metaA.data;
+      const centerSlice = nextData[nextData.length - 1];
+      const cx2 = next.x + centerSlice.x;
+      const cy2 = next.y + centerSlice.y;
+      const R2  = centerSlice.outerRadius;
+      const x1e = cx2 - Math.cos(Math.PI/3) * R2;
+      const y1e = cy2 - Math.sin(Math.PI/3) * R2;
+      const x2e = cx2 - Math.cos(Math.PI/3) * R2;
+      const y2e = cy2 + Math.sin(Math.PI/3) * R2;
+
+      // Use the slice color at semi-transparent
+      const sliceColor = r.colors[r.pipSliceIdx] || '#94a3b8';
+      const rgb = hexToRgb(sliceColor);
+      ctx.save();
+      ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
+      ctx.lineWidth = Math.round(1.5 * SC);
+      ctx.beginPath(); ctx.moveTo(x1s, y1s); ctx.lineTo(x1e, y1e); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2s, y2s); ctx.lineTo(x2e, y2e); ctx.stroke();
+      ctx.restore();
+    });
+
+    const a = document.createElement('a');
+    a.download = name; a.href = off.toDataURL(type, 0.95); a.click();
   }
 
   // ── Contrast Engine ──────────────────────────────────────────────────────────
@@ -1197,6 +1867,21 @@
 
     syncCToggles();
     renderCompare();
+
+    loadPip();
+    renderPipUI();
+    const pipFs = document.getElementById('pipFontSlider');
+    const pipFl = document.getElementById('pipFontLabel');
+    if (pipFs) pipFs.value = PIP.fontSize;
+    if (pipFl) pipFl.textContent = PIP.fontSize + 'px';
+    const pipLeg = document.getElementById('pipLegendToggle');
+    const pipDon = document.getElementById('pipDonutToggle');
+    if (pipLeg) pipLeg.className = 'toggle-track ' + (PIP.showLegend?'on':'off');
+    if (pipDon) pipDon.className = 'toggle-track ' + (PIP.isDonut?'on':'off');
+    ['percent','value','label'].forEach(m => {
+      const cb = document.getElementById('pip-mode-'+m);
+      if (cb) cb.checked = (PIP.labelModes||['percent']).includes(m);
+    });
   });
   </script>
 </body>
