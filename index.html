@@ -816,7 +816,7 @@
     }
     empty.style.display='none';
 
-    const labels = valid.map(r=>r.label||'Unnamed');
+    const labels = valid.map(r=>r.label||'');
     const values = valid.map(r=>Number(r.value));
     const colors = valid.map(r=>r.color);
 
@@ -1279,7 +1279,7 @@
       const valid = chart.rows.filter(r=>Number(r.value)>0);
       if (!valid.length) return;
       const total = valid.reduce((s,r)=>s+Number(r.value),0);
-      const labels = valid.map(r=>r.label||'Unnamed');
+      const labels = valid.map(r=>r.label||'');
       const values = valid.map(r=>Number(r.value));
       const colors = valid.map(r=>r.color);
       const ratio = Math.sqrt(SIZE/BASE);
@@ -1476,7 +1476,7 @@
     const rendered = items.map(({ chart, valid, ci }, idx) => {
       const sz = sizes[idx];
       const total = valid.reduce((s,r)=>s+Number(r.value),0);
-      const labels = valid.map(r=>r.label||'Unnamed');
+      const labels = valid.map(r=>r.label||'');
       const values = valid.map(r=>Number(r.value));
       const colors = valid.map(r=>r.color);
       const scaledFont = Math.round(PIP.fontSize * Math.sqrt(SC * (sz/BASE_SIZE)));
@@ -1506,10 +1506,10 @@
             legend: { display: PIP.showLegend, position:'bottom', labels:{ padding:Math.round(6*SC*(sz/BASE_SIZE)), boxWidth:Math.round(10*SC*(sz/BASE_SIZE)), boxHeight:Math.round(10*SC*(sz/BASE_SIZE)), font:{size:legendFont}, color:txtColor } },
             tooltip: { enabled:false },
             datalabels: {
-              display: c2 => PIP.labelModes.length > 0 || (pipSliceIdx >= 0 && c2.dataIndex === 0),
+              display: c2 => PIP.labelModes.length > 0,
               formatter: (val, c2) => {
                 const parts = [];
-                if (PIP.labelModes.includes('label') || (pipSliceIdx >= 0 && c2.dataIndex === 0)) parts.push(c2.chart.data.labels[c2.dataIndex]);
+                if (PIP.labelModes.includes('label')) parts.push(c2.chart.data.labels[c2.dataIndex]);
                 if (PIP.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
                 if (PIP.labelModes.includes('value'))   parts.push(val.toLocaleString());
                 return parts.length ? parts.join('\n') : '';
@@ -1771,7 +1771,7 @@
     empty.style.display = 'none';
 
     const total  = valid.reduce((s,r)=>s+Number(r.value),0);
-    const labels = valid.map(r=>r.label||'Unnamed');
+    const labels = valid.map(r=>r.label||'');
     const values = valid.map(r=>Number(r.value));
     const colors = valid.map(r=>r.color);
 
