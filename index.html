@@ -629,7 +629,8 @@
   const tabTitles = {
     'single': 'PieChartFast | Free Pie Chart Maker Online (No Watermarks)',
     'compare': 'Free Online Proportional Pie Chart Maker | PieChartFast',
-    'pip': 'Free Online Pie of Pie Chart Maker | PieChartFast'
+    'pip': 'Free Online Pie of Pie Chart Maker | PieChartFast',
+    'pip-triple': 'Free Online Pie of Pie of Pie Chart Generator | PieChartFast'
   };
   
   const tabDescriptions = {
@@ -638,7 +639,7 @@
     'pip': 'Free online pie of pie chart generator — create nested pie charts with drill-down functionality. Multi-level pie charts with no watermarks.'
   };
   
-  function switchTab(tab, updateUrl = true) {
+  function switchTab(tab, updateUrl = true, specialTitle = null) {
     activeTab = tab;
     
     // Update URL hash for SEO
@@ -652,7 +653,8 @@
     }
     
     // Update page title and meta description for SEO
-    document.title = tabTitles[tab];
+    const titleToUse = specialTitle ? tabTitles[specialTitle] : tabTitles[tab];
+    document.title = titleToUse;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.content = tabDescriptions[tab];
     
@@ -660,7 +662,7 @@
     const structuredData = document.querySelector('script[type="application/ld+json"]');
     if (structuredData) {
       const data = JSON.parse(structuredData.textContent);
-      data.name = tabTitles[tab];
+      data.name = titleToUse;
       data.description = tabDescriptions[tab];
       data.url = window.location.href;
       structuredData.textContent = JSON.stringify(data);
@@ -687,6 +689,7 @@
   function handleHashNavigation() {
     const hash = window.location.hash.slice(1); // Remove #
     let targetTab = 'single';
+    let useSpecialTitle = null;
     
     // Find tab based on hash
     for (const [tab, route] of Object.entries(tabRoutes)) {
@@ -696,15 +699,15 @@
       }
     }
     
-    // Special handling for "pie of pie of pie" - redirect to pip tab
+    // Special handling for "pie of pie of pie" - redirect to pip tab but use special title
     if (hash.includes('pie-of-pie-of-pie')) {
       targetTab = 'pip';
-      // Update URL to correct hash
-      window.location.hash = tabRoutes[targetTab];
+      useSpecialTitle = 'pip-triple';
+      // Keep the original hash for SEO purposes
     }
     
     if (targetTab !== activeTab) {
-      switchTab(targetTab, false); // Don't update URL again
+      switchTab(targetTab, false, useSpecialTitle); // Don't update URL again, but use special title
     }
   }
   
