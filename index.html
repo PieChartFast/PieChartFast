@@ -410,9 +410,9 @@
         </div>
 
         <!-- Theme Roll -->
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 min-w-[280px]">
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Color Theme</p>
-          <div id="pipPaletteGrid" class="grid grid-cols-1 gap-1.5 mt-1"></div>
+          <div id="pipPaletteGrid" class="grid grid-cols-2 gap-1.5 mt-1"></div>
         </div>
 
         <!-- Style -->
@@ -880,10 +880,16 @@
   // Pie 1 = distinct brand triad (parent hue FIRST, since Slice A is the bridge).
   // Pie 2/3 = monochromatic tiers generated from the root hue, each tier lighter.
   const NESTED_THEMES = [
+    // Row 1 — generative cascades (child pies HSL-shaded from Pie 1's bridge slice)
     { name:'Modern Corporate', pie1:['#14B8A6','#0A2540','#64748B'] },
     { name:'Nordic Earth',     pie1:['#7C8A4E','#C0683C','#CBA14A'] },
     { name:'Cyberpunk Glow',   pie1:['#A855F7','#EC4899','#22D3EE'], dark:true },
-    { name:'Sequential Rainbow',pie1:['#F43F5E','#2563EB','#FACC15'], hueShift:15, hueSpread:25 }
+    { name:'Sequential Rainbow',pie1:['#F43F5E','#2563EB','#FACC15'], hueShift:15, hueSpread:25 },
+    // Row 2 — explicit per-tier palettes (each pie has its own hand-picked triad)
+    { name:'Retro Editorial', tiers:[['#D4A017','#C65D3B','#2F7E8C'],['#7A7C3F','#C98B91','#2C3E5C'],['#A7B59A','#F0C3A0','#EDE4D0']] },
+    { name:'Analogous Shift', tiers:[['#6B2D5C','#C8324B','#F2785C'],['#F2913D','#F6B73C','#FCD848'],['#A3C940','#6FCF97','#2FA98C']] },
+    { name:'Classic Triadic', tiers:[['#4338CA','#14B8A6','#FB7185'],['#374151','#D4AF6A','#6EE7B7'],['#64748B','#C4B5FD','#FBCFE0']] },
+    { name:'Sorbet Pastel',   tiers:[['#C9B6E4','#BFD8A4','#F6C396'],['#A9CCE3','#F5E79E','#F4B8D0'],['#A8E0C8','#D6CDEA','#F6CBA0']] }
   ];
 
   function rgbToHsl(r,g,b){
@@ -922,15 +928,19 @@
   // Child tiers derive from the CURRENT Pie 1 Slice A color so manual edits cascade.
   function pipPaletteFor(ci){
     const theme = NESTED_THEMES.find(t=>t.name===PIP.activePalette) || NESTED_THEMES[0];
+    // Explicit per-tier themes: each pie uses its own hand-picked triad
+    if (theme.tiers) return theme.tiers[Math.min(ci, theme.tiers.length-1)].slice();
+    // Generative cascade themes
     if (ci===0) return theme.pie1.slice();
     const root = (PIP.charts[0] && PIP.charts[0].rows[0] && PIP.charts[0].rows[0].color) || theme.pie1[0];
     const count = PIP.charts[ci] ? PIP.charts[ci].rows.length : 3;
     return tierPalette(root, ci, count, theme);
   }
-  // Commit a slice color edit; if it's Pie 1's bridge (Slice A), re-cascade children.
+  // Commit a slice color edit; for generative themes, editing Pie 1 Slice A re-cascades children.
   function pipCommitColor(ci, ri, value){
     PIP.charts[ci].rows[ri].color = value;
-    if (ci===0 && ri===0){
+    const theme = NESTED_THEMES.find(t=>t.name===PIP.activePalette) || NESTED_THEMES[0];
+    if (!theme.tiers && ci===0 && ri===0){
       for (let k=1; k<PIP.charts.length; k++){
         const pal = pipPaletteFor(k);
         PIP.charts[k].rows.forEach((r,i)=> r.color = pal[i % pal.length]);
@@ -938,13 +948,15 @@
     }
     savePip(); renderPipColumns(); renderPipCharts();
   }
-  // Recolor every pie via the cascade (used on theme click / migration).
+  // Recolor every pie via the theme (used on theme click / migration).
   function applyPipTheme(name){
     const theme = NESTED_THEMES.find(t=>t.name===name) || NESTED_THEMES[0];
     PIP.activePalette = theme.name;
     PIP.darkMode = !!theme.dark;
     PIP.charts.forEach((ch, ci) => {
-      const pal = ci===0 ? theme.pie1 : tierPalette(theme.pie1[0], ci, ch.rows.length, theme);
+      const pal = theme.tiers
+        ? theme.tiers[Math.min(ci, theme.tiers.length-1)]
+        : (ci===0 ? theme.pie1 : tierPalette(theme.pie1[0], ci, ch.rows.length, theme));
       ch.rows = ch.rows.map((r,i) => ({ ...r, color: pal[i % pal.length] }));
     });
   }
@@ -1024,15 +1036,17 @@
     const grid = document.getElementById('pipPaletteGrid');
     if (!grid) return;
     grid.innerHTML = '';
+    const dots = arr => arr.slice(0,3).map(c=>`<span class="w-2.5 h-2.5 rounded-full ring-1 ring-black/5" style="background:${c}"></span>`).join('');
     NESTED_THEMES.forEach(t => {
-      const child = tierPalette(t.pie1[0], 1, 4, t);
+      const start = t.tiers ? t.tiers[0] : t.pie1;
+      const end   = t.tiers ? t.tiers[t.tiers.length-1] : tierPalette(t.pie1[0], 2, 3, t);
       const btn = document.createElement('button');
       btn.className = 'palette-btn border rounded-lg p-2 flex flex-col items-start gap-1.5 transition-all text-left border-slate-200 hover:border-slate-300'+(PIP.activePalette===t.name?' active':'');
       btn.innerHTML = `
         <div class="flex items-center gap-1">
-          ${t.pie1.map(c=>`<span class="w-3.5 h-3.5 rounded-full ring-1 ring-black/5" style="background:${c}"></span>`).join('')}
-          <span class="text-slate-300 text-[10px] px-0.5">&#8594;</span>
-          <span class="inline-flex rounded-full overflow-hidden ring-1 ring-black/5">${child.map(c=>`<span class="w-2.5 h-3.5" style="background:${c}"></span>`).join('')}</span>
+          <span class="flex gap-0.5">${dots(start)}</span>
+          <span class="text-slate-300 text-[10px]">&#8594;</span>
+          <span class="flex gap-0.5">${dots(end)}</span>
         </div>
         <span class="text-xs font-medium text-slate-600">${t.name}</span>`;
       btn.onclick = () => {
