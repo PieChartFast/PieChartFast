@@ -55,8 +55,8 @@
   <div class="bg-white border-b border-slate-200 px-4">
     <div class="max-w-7xl mx-auto flex gap-1">
       <button id="tab-single" onclick="switchTab('single')" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-sky-500 text-sky-600 -mb-px transition-colors">Single Chart</button>
-      <button id="tab-compare" onclick="switchTab('compare')" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 -mb-px transition-colors">Compare Charts</button>
       <button id="tab-pip" onclick="switchTab('pip')" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 -mb-px transition-colors">Pie of Pie</button>
+      <button id="tab-compare" onclick="switchTab('compare')" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 -mb-px transition-colors">Compare Charts</button>
     </div>
   </div>
 
@@ -410,9 +410,9 @@
         </div>
 
         <!-- Theme Roll -->
-        <div class="flex flex-col gap-1 min-w-[280px]">
+        <div class="flex flex-col gap-1 min-w-[420px]">
           <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Color Theme</p>
-          <div id="pipPaletteGrid" class="grid grid-cols-2 gap-1.5 mt-1"></div>
+          <div id="pipPaletteGrid" class="grid grid-cols-3 gap-2 mt-1"></div>
         </div>
 
         <!-- Style -->
@@ -870,7 +870,7 @@
     labelModes: ['percent'],
     fontSize: 13,
     showLegend: true,
-    isDonut: false,
+    isDonut: true,
     darkMode: false,
     activePalette: 'Modern Corporate'
   };
@@ -889,7 +889,12 @@
     { name:'Retro Editorial', tiers:[['#D4A017','#C65D3B','#2F7E8C'],['#7A7C3F','#C98B91','#2C3E5C'],['#A7B59A','#F0C3A0','#EDE4D0']] },
     { name:'Analogous Shift', tiers:[['#6B2D5C','#C8324B','#F2785C'],['#F2913D','#F6B73C','#FCD848'],['#A3C940','#6FCF97','#2FA98C']] },
     { name:'Classic Triadic', tiers:[['#4338CA','#14B8A6','#FB7185'],['#374151','#D4AF6A','#6EE7B7'],['#64748B','#C4B5FD','#FBCFE0']] },
-    { name:'Sorbet Pastel',   tiers:[['#C9B6E4','#BFD8A4','#F6C396'],['#A9CCE3','#F5E79E','#F4B8D0'],['#A8E0C8','#D6CDEA','#F6CBA0']] }
+    { name:'Sorbet Pastel',   tiers:[['#C9B6E4','#BFD8A4','#F6C396'],['#A9CCE3','#F5E79E','#F4B8D0'],['#A8E0C8','#D6CDEA','#F6CBA0']] },
+    // Row 3 — classic single-chart themes adapted for nested use
+    { name:'Clean Corporate', pie1:['#2563eb','#7c3aed','#059669'] },
+    { name:'Pastel',          pie1:['#93c5fd','#c4b5fd','#6ee7b7'] },
+    { name:'Vibrant',         pie1:['#f43f5e','#f97316','#e308'] },
+    { name:'Monochrome',      pie1:['#c8cdd4','#a0a8b4','#78838f'] }
   ];
 
   function rgbToHsl(r,g,b){
@@ -910,6 +915,18 @@
     const to=v=>('0'+Math.round((v+m)*255).toString(16)).slice(-2);
     return '#'+to(r)+to(g)+to(b);
   }
+  // Dynamic monochromatic palette generation - infinite scaling
+  function generateMonochromaticPalette(baseHue, baseSaturation, sliceCount, startLightness = 75, endLightness = 35) {
+    const colors = [];
+    const step = (startLightness - endLightness) / Math.max(sliceCount - 1, 1);
+    
+    for (let i = 0; i < sliceCount; i++) {
+      const currentLightness = startLightness - (i * step);
+      colors.push(hslToHex(baseHue, baseSaturation, currentLightness));
+    }
+    return colors;
+  }
+
   // Generate a child pie's palette from the root hue. depth 1 = Pie 2, depth 2 = Pie 3.
   function tierPalette(rootHex, depth, count, opts={}){
     const { hueShift=0, hueSpread=0 } = opts;
@@ -924,16 +941,65 @@
     }
     return out;
   }
+
+  // Enhanced palette generation with fallback safety net
+  function generateTierPaletteWithFallback(predefinedColors, sliceCount, rootHex = null) {
+    // If we have enough predefined colors, use them
+    if (sliceCount <= predefinedColors.length) {
+      return predefinedColors.slice(0, sliceCount);
+    }
+    
+    // Use predefined colors for available slots
+    const result = predefinedColors.slice();
+    
+    // Generate additional colors dynamically
+    const remainingSlices = sliceCount - predefinedColors.length;
+    
+    // Extract base hue and saturation from the last predefined color
+    const lastColor = predefinedColors[predefinedColors.length - 1];
+    const baseHsl = hexToHsl(lastColor);
+    
+    // If we have a rootHex (from Pie 1), use its hue instead
+    const baseHue = rootHex ? hexToHsl(rootHex).h : baseHsl.h;
+    const baseSat = baseHsl.s;
+    
+    // Generate remaining colors with stepped lightness
+    const startLightness = baseHsl.l + 8; // Start slightly lighter than last predefined
+    const endLightness = Math.min(92, baseHsl.l + (remainingSlices * 8)); // Don't go too light
+    
+    const dynamicColors = generateMonochromaticPalette(
+      baseHue, 
+      baseSat, 
+      remainingSlices + 1, // +1 to include the transition point
+      startLightness,
+      endLightness
+    );
+    
+    // Skip the first dynamic color (it's too close to the last predefined)
+    result.push(...dynamicColors.slice(1));
+    
+    return result.slice(0, sliceCount);
+  }
   // Colors for a single pie under the active theme (Pie 1 = triad, else generated tier).
   // Child tiers derive from the CURRENT Pie 1 Slice A color so manual edits cascade.
   function pipPaletteFor(ci){
     const theme = NESTED_THEMES.find(t=>t.name===PIP.activePalette) || NESTED_THEMES[0];
-    // Explicit per-tier themes: each pie uses its own hand-picked triad
-    if (theme.tiers) return theme.tiers[Math.min(ci, theme.tiers.length-1)].slice();
-    // Generative cascade themes
-    if (ci===0) return theme.pie1.slice();
-    const root = (PIP.charts[0] && PIP.charts[0].rows[0] && PIP.charts[0].rows[0].color) || theme.pie1[0];
     const count = PIP.charts[ci] ? PIP.charts[ci].rows.length : 3;
+    
+    // Explicit per-tier themes: each pie uses its own hand-picked triad with fallback
+    if (theme.tiers) {
+      const predefinedColors = theme.tiers[Math.min(ci, theme.tiers.length-1)];
+      return generateTierPaletteWithFallback(predefinedColors, count);
+    }
+    
+    // Generative cascade themes
+    if (ci===0) {
+      // For Pie 1, use the predefined triad with fallback
+      return generateTierPaletteWithFallback(theme.pie1, count);
+    }
+    
+    // For child pies (Pie 2, Pie 3), generate from root color
+    const root = (PIP.charts[0] && PIP.charts[0].rows[0] && PIP.charts[0].rows[0].color) || theme.pie1[0];
     return tierPalette(root, ci, count, theme);
   }
   // Commit a slice color edit; for generative themes, editing Pie 1 Slice A re-cascades children.
@@ -1017,18 +1083,57 @@
 
   function pipAddRow(ci) {
     const rows = PIP.charts[ci].rows;
+    const newRowIndex = rows.length;
+    
+    // Add new row with placeholder color
     rows.push({id:uid(),label:'',value:0,color:'#000'});
-    // Re-apply this pie's themed palette so the new slice fits the ramp
-    const pal = pipPaletteFor(ci);
-    rows.forEach((r,i)=> r.color = pal[i % pal.length]);
+    
+    // Get the theme's full palette to see if we have predefined colors
+    const theme = NESTED_THEMES.find(t=>t.name===PIP.activePalette) || NESTED_THEMES[0];
+    let predefinedColors = [];
+    
+    if (theme.tiers) {
+      predefinedColors = theme.tiers[Math.min(ci, theme.tiers.length-1)];
+    } else if (ci === 0) {
+      predefinedColors = theme.pie1;
+    }
+    
+    // If we have a predefined color for this new slice, use it
+    if (newRowIndex < predefinedColors.length) {
+      rows[newRowIndex].color = predefinedColors[newRowIndex];
+    } else {
+      // Generate a new color based on the last existing color
+      const lastColor = rows[newRowIndex - 1].color;
+      const lastHsl = hexToHsl(lastColor);
+      
+      // Step up the lightness for the new color (go lighter)
+      const newLightness = Math.min(92, lastHsl.l + 8);
+      rows[newRowIndex].color = hslToHex(lastHsl.h, lastHsl.s, newLightness);
+    }
+    
     savePip(); renderPipColumns(); renderPipCharts();
   }
 
   function pipRemoveRow(ci, ri) {
     PIP.charts[ci].rows.splice(ri,1);
-    // Re-flow remaining colors so the ramp stays smooth
-    const pal = pipPaletteFor(ci);
-    PIP.charts[ci].rows.forEach((r,i)=> r.color = pal[i % pal.length]);
+    
+    // Check if we need to regenerate colors (only if we have predefined theme colors)
+    const theme = NESTED_THEMES.find(t=>t.name===PIP.activePalette) || NESTED_THEMES[0];
+    let predefinedColors = [];
+    
+    if (theme.tiers) {
+      predefinedColors = theme.tiers[Math.min(ci, theme.tiers.length-1)];
+    } else if (ci === 0) {
+      predefinedColors = theme.pie1;
+    }
+    
+    // If we have predefined colors for all remaining slices, use them
+    // Otherwise, keep existing custom colors
+    if (PIP.charts[ci].rows.length <= predefinedColors.length) {
+      const pal = pipPaletteFor(ci);
+      PIP.charts[ci].rows.forEach((r,i)=> r.color = pal[i % pal.length]);
+    }
+    
     savePip(); renderPipColumns(); renderPipCharts();
   }
 
@@ -1036,24 +1141,57 @@
     const grid = document.getElementById('pipPaletteGrid');
     if (!grid) return;
     grid.innerHTML = '';
+    
     const dots = arr => arr.slice(0,3).map(c=>`<span class="w-2.5 h-2.5 rounded-full ring-1 ring-black/5" style="background:${c}"></span>`).join('');
-    NESTED_THEMES.forEach(t => {
-      const start = t.tiers ? t.tiers[0] : t.pie1;
-      const end   = t.tiers ? t.tiers[t.tiers.length-1] : tierPalette(t.pie1[0], 2, 3, t);
-      const btn = document.createElement('button');
-      btn.className = 'palette-btn border rounded-lg p-2 flex flex-col items-start gap-1.5 transition-all text-left border-slate-200 hover:border-slate-300'+(PIP.activePalette===t.name?' active':'');
-      btn.innerHTML = `
-        <div class="flex items-center gap-1">
-          <span class="flex gap-0.5">${dots(start)}</span>
-          <span class="text-slate-300 text-[10px]">&#8594;</span>
-          <span class="flex gap-0.5">${dots(end)}</span>
-        </div>
-        <span class="text-xs font-medium text-slate-600">${t.name}</span>`;
-      btn.onclick = () => {
-        applyPipTheme(t.name);
-        savePip(); renderPipPaletteGrid(); renderPipUI();
-      };
-      grid.appendChild(btn);
+    
+    // Define theme phases
+    const phases = [
+      {
+        title: 'Modern',
+        themes: NESTED_THEMES.filter(t => !t.tiers && !['Clean Corporate', 'Pastel', 'Vibrant', 'Monochrome'].includes(t.name))
+      },
+      {
+        title: 'Inspired',
+        themes: NESTED_THEMES.filter(t => t.tiers)
+      },
+      {
+        title: 'Classic',
+        themes: NESTED_THEMES.filter(t => ['Clean Corporate', 'Pastel', 'Vibrant', 'Monochrome'].includes(t.name))
+      }
+    ];
+    
+    // Create columns for each phase
+    phases.forEach(phase => {
+      const column = document.createElement('div');
+      column.className = 'flex flex-col gap-1.5';
+      
+      // Add phase header
+      const header = document.createElement('div');
+      header.className = 'text-xs font-semibold text-slate-500 uppercase tracking-wide text-center pb-1 border-b border-slate-100';
+      header.textContent = phase.title;
+      column.appendChild(header);
+      
+      // Add theme buttons
+      phase.themes.forEach(t => {
+        const start = t.tiers ? t.tiers[0] : t.pie1;
+        const end   = t.tiers ? t.tiers[t.tiers.length-1] : tierPalette(t.pie1[0], 2, 3, t);
+        const btn = document.createElement('button');
+        btn.className = 'palette-btn border rounded-lg p-2 flex flex-col items-start gap-1.5 transition-all text-left border-slate-200 hover:border-slate-300'+(PIP.activePalette===t.name?' active':'');
+        btn.innerHTML = `
+          <div class="flex items-center gap-1">
+            <span class="flex gap-0.5">${dots(start)}</span>
+            <span class="text-slate-300 text-[10px]">&#8594;</span>
+            <span class="flex gap-0.5">${dots(end)}</span>
+          </div>
+          <span class="text-xs font-medium text-slate-600">${t.name}</span>`;
+        btn.onclick = () => {
+          applyPipTheme(t.name);
+          savePip(); renderPipPaletteGrid(); renderPipUI();
+        };
+        column.appendChild(btn);
+      });
+      
+      grid.appendChild(column);
     });
   }
 
@@ -1197,10 +1335,10 @@
             legend: { display: PIP.showLegend, position:'bottom', labels:{ padding:8, boxWidth:10, boxHeight:10, font:{size:legendFont}, color:legendColor } },
             tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${((ctx.parsed/total)*100).toFixed(1)}%)` } },
             datalabels: {
-              display: ctx => PIP.labelModes.length > 0 || (pipIdx >= 0 && ctx.dataIndex === 0),
+              display: ctx => PIP.labelModes.length > 0,
               formatter: (val, ctx) => {
                 const parts = [];
-                if (PIP.labelModes.includes('label') || (pipIdx >= 0 && ctx.dataIndex === 0)) parts.push(ctx.chart.data.labels[ctx.dataIndex]);
+                if (PIP.labelModes.includes('label')) parts.push(ctx.chart.data.labels[ctx.dataIndex]);
                 if (PIP.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
                 if (PIP.labelModes.includes('value'))   parts.push(val.toLocaleString());
                 return parts.length ? parts.join('\n') : '';
