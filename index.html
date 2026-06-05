@@ -579,6 +579,23 @@
         </div>
 
       </div>
+      
+      <!-- Pie of Pie of Pie Content -->
+      <div class="mt-10">
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Advanced Nested Charts: Pie of Pie of Pie</h2>
+        <p class="text-slate-500 mb-6 max-w-3xl">For complex data visualization needs, our pie of pie generator supports multi-level nested charts. Create pie of pie of pie charts to show hierarchical data relationships, drill-down analysis, and multi-tier data breakdowns with professional styling and infinite color scaling.</p>
+        <div class="bg-slate-50 rounded-xl p-6 border border-slate-200">
+          <h3 class="text-lg font-semibold text-slate-800 mb-3">Pie of Pie of Pie Generator Features:</h3>
+          <ul class="text-sm text-slate-600 space-y-2">
+            <li>• Multi-level nested pie charts with up to 3 tiers of data</li>
+            <li>• Dynamic color generation with infinite scaling for any number of slices</li>
+            <li>• Professional themes: Modern, Inspired, and Classic color palettes</li>
+            <li>• Smart connector lines showing data relationships between tiers</li>
+            <li>• Export high-resolution nested charts as PNG or JPG</li>
+            <li>• Perfect for hierarchical data, drill-down analysis, and complex breakdowns</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
     <!-- Privacy / Tech -->
@@ -601,19 +618,98 @@
 
   // ── Tab switching ─────────────────────────────────────────────────────────────
   let activeTab = 'single';
-  function switchTab(tab) {
+  
+  // SEO URL mappings
+  const tabRoutes = {
+    'single': '',
+    'compare': '#proportional-pie-chart-maker',
+    'pip': '#pie-of-pie-generator'
+  };
+  
+  const tabTitles = {
+    'single': 'PieChartFast | Free Pie Chart Maker Online (No Watermarks)',
+    'compare': 'Free Online Proportional Pie Chart Maker | PieChartFast',
+    'pip': 'Free Online Pie of Pie Chart Maker | PieChartFast'
+  };
+  
+  const tabDescriptions = {
+    'single': 'Free pie chart maker online — no watermarks, no login. Create, customize, and download high-resolution pie charts as PNG or JPG in seconds.',
+    'compare': 'Free online proportional pie chart maker — compare two pie charts side by side. Perfect for data comparison and analysis with no watermarks.',
+    'pip': 'Free online pie of pie chart generator — create nested pie charts with drill-down functionality. Multi-level pie charts with no watermarks.'
+  };
+  
+  function switchTab(tab, updateUrl = true) {
     activeTab = tab;
+    
+    // Update URL hash for SEO
+    if (updateUrl) {
+      const hash = tabRoutes[tab];
+      if (hash) {
+        window.location.hash = hash;
+      } else {
+        history.replaceState(null, '', window.location.pathname);
+      }
+    }
+    
+    // Update page title and meta description for SEO
+    document.title = tabTitles[tab];
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.content = tabDescriptions[tab];
+    
+    // Update structured data
+    const structuredData = document.querySelector('script[type="application/ld+json"]');
+    if (structuredData) {
+      const data = JSON.parse(structuredData.textContent);
+      data.name = tabTitles[tab];
+      data.description = tabDescriptions[tab];
+      data.url = window.location.href;
+      structuredData.textContent = JSON.stringify(data);
+    }
+    
+    // Show/hide panels
     document.querySelector('main').style.display              = tab==='single'  ? '' : 'none';
     document.getElementById('comparePanel').style.display     = tab==='compare' ? '' : 'none';
     document.getElementById('pipPanel').style.display         = tab==='pip'     ? '' : 'none';
+    
+    // Update tab button styles
     ['single','compare','pip'].forEach(t => {
       const btn = document.getElementById('tab-'+t);
       if (t===tab) { btn.classList.add('border-sky-500','text-sky-600'); btn.classList.remove('border-transparent','text-slate-500','hover:text-slate-700'); }
       else         { btn.classList.remove('border-sky-500','text-sky-600'); btn.classList.add('border-transparent','text-slate-500','hover:text-slate-700'); }
     });
+    
+    // Initialize tab-specific content
     if (tab==='compare') { syncCToggles(); renderCompare(); }
     if (tab==='pip') { renderPipCharts(); }
   }
+  
+  // Handle URL hash on page load
+  function handleHashNavigation() {
+    const hash = window.location.hash.slice(1); // Remove #
+    let targetTab = 'single';
+    
+    // Find tab based on hash
+    for (const [tab, route] of Object.entries(tabRoutes)) {
+      if (route === hash) {
+        targetTab = tab;
+        break;
+      }
+    }
+    
+    // Special handling for "pie of pie of pie" - redirect to pip tab
+    if (hash.includes('pie-of-pie-of-pie')) {
+      targetTab = 'pip';
+      // Update URL to correct hash
+      window.location.hash = tabRoutes[targetTab];
+    }
+    
+    if (targetTab !== activeTab) {
+      switchTab(targetTab, false); // Don't update URL again
+    }
+  }
+  
+  // Listen for hash changes
+  window.addEventListener('hashchange', handleHashNavigation);
 
   // ── State ────────────────────────────────────────────────────────────────────
   const STATE = {
@@ -1986,6 +2082,8 @@
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
+    // Handle URL hash navigation for SEO
+    handleHashNavigation();
     loadState();
     loadCState();
     if (CSTATE.titleA) document.getElementById('compareTitleA').value = CSTATE.titleA;
