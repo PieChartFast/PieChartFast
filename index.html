@@ -618,7 +618,6 @@
 
   // ── Tab switching ─────────────────────────────────────────────────────────────
   let activeTab = 'single';
-  let isSwitchingTab = false; // Prevent recursive calls
   
   // SEO URL mappings
   const tabRoutes = {
@@ -641,19 +640,12 @@
   };
   
   function switchTab(tab, updateUrl = true, specialTitle = null) {
-    if (isSwitchingTab) return; // Prevent recursive calls
-    isSwitchingTab = true;
-    
     activeTab = tab;
     
-    // Update URL hash for SEO
+    // Use replaceState for ALL hash updates — avoids triggering hashchange event
     if (updateUrl) {
       const hash = tabRoutes[tab];
-      if (hash) {
-        window.location.hash = hash;
-      } else {
-        history.replaceState(null, '', window.location.pathname);
-      }
+      history.replaceState(null, '', hash ? hash : window.location.pathname);
     }
     
     // Update page title and meta description for SEO
@@ -687,13 +679,10 @@
     // Initialize tab-specific content
     if (tab==='compare') { syncCToggles(); renderCompare(); }
     if (tab==='pip') { renderPipCharts(); }
-    
-    isSwitchingTab = false; // Reset flag
   }
   
   // Handle URL hash on page load
   function handleHashNavigation() {
-    if (isSwitchingTab) return; // Prevent recursive calls
     
     const hash = window.location.hash.slice(1); // Remove #
     let targetTab = 'single';
