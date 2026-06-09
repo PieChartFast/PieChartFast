@@ -1082,18 +1082,17 @@
     const baseSat = baseHsl.s;
     
     // Generate remaining colors with stepped lightness
-    const startLightness = baseHsl.l + 8; // Start slightly lighter than last predefined
-    const endLightness = Math.min(92, baseHsl.l + (remainingSlices * 8)); // Don't go too light
+    const startLightness = baseHsl.l + 8;
+    const endLightness = Math.min(92, baseHsl.l + (remainingSlices * 8));
     
     const dynamicColors = generateMonochromaticPalette(
       baseHue, 
       baseSat, 
-      remainingSlices + 1, // +1 to include the transition point
+      remainingSlices + 1,
       startLightness,
       endLightness
     );
     
-    // Skip the first dynamic color (it's too close to the last predefined)
     result.push(...dynamicColors.slice(1));
     
     return result.slice(0, sliceCount);
@@ -1222,8 +1221,8 @@
       const lastColor = rows[newRowIndex - 1].color;
       const lastHsl = hexToHsl(lastColor);
       
-      // Step up the lightness for the new color (go lighter)
-      const newLightness = Math.min(92, lastHsl.l + 8);
+      // Doubled step (+16) per slice so each added slice is clearly distinct
+      const newLightness = Math.min(92, lastHsl.l + 16);
       rows[newRowIndex].color = hslToHex(lastHsl.h, lastHsl.s, newLightness);
     }
     
