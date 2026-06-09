@@ -153,11 +153,12 @@
             <div id="totalToggle" class="toggle-track off" onclick="toggleShowTotal()"><div class="toggle-thumb"></div></div>
           </div>
 
-          <!-- Transparent BG Toggle -->
+          <!-- Dark Mode Toggle -->
           <div class="flex items-center justify-between">
-            <label class="text-xs text-slate-500">Transparent Background</label>
-            <div id="transparentToggle" class="toggle-track off" onclick="toggleTransparent()"><div class="toggle-thumb"></div></div>
+            <label class="text-xs text-slate-500">Dark Background</label>
+            <div id="darkToggle" class="toggle-track off" onclick="toggleDarkMode()"><div class="toggle-thumb"></div></div>
           </div>
+
         </div>
 
       </aside>
@@ -166,7 +167,7 @@
       <section class="flex-1 flex flex-col gap-4">
 
         <!-- Chart Card -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col items-center">
+        <div id="chartCard" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col items-center">
           <h2 id="chartTitleDisplay" class="text-base font-semibold text-slate-300 mb-4 text-center">Your Chart Title</h2>
           <div style="position:relative;width:100%;max-width:520px;margin:0 auto;">
             <canvas id="pieChart"></canvas>
@@ -200,8 +201,12 @@
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Download JPG
             </button>
+            <button onclick="downloadTransparentPNG()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm border-2 border-dashed border-slate-300 hover:border-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Transparent PNG
+            </button>
           </div>
-          <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG free. No watermarks. <span id="transparentNote" class="hidden text-amber-600 font-medium">Transparent mode: PNG only.</span></p>
+          <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG free. No watermarks.</p>
         </div>
 
         <!-- Quick Stats -->
@@ -234,10 +239,6 @@
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="cShowTotal" class="w-3.5 h-3.5 accent-sky-500" onchange="CSTATE.showTotal=this.checked;saveCState();" />
             <span class="text-sm text-slate-700">Show Total in export</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="cTransparent" class="w-3.5 h-3.5 accent-sky-500" onchange="CSTATE.transparentBg=this.checked;saveCState();document.getElementById('cTransparentNote').classList.toggle('hidden',!this.checked);" />
-            <span class="text-sm text-slate-700">Transparent Background</span>
           </label>
         </div>
 
@@ -291,13 +292,17 @@
             <span class="text-sm text-slate-700">Donut Style</span>
             <div id="cDonutToggle" class="toggle-track off" onclick="toggleDonut();syncCToggles()"><div class="toggle-thumb"></div></div>
           </div>
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-sm text-slate-700">Dark Background</span>
+            <div id="cDarkToggle" class="toggle-track off" onclick="CSTATE.darkMode=!CSTATE.darkMode;saveCState();this.className='toggle-track '+(CSTATE.darkMode?'on':'off');renderCompareCharts()"><div class="toggle-thumb"></div></div>
+          </div>
         </div>
 
       </div>
     </div>
 
     <!-- Two chart columns -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div id="compareChartsWrap" class="grid grid-cols-1 lg:grid-cols-2 gap-6 rounded-2xl transition-colors">
 
       <!-- Chart A -->
       <div class="flex flex-col gap-4">
@@ -317,7 +322,7 @@
             Add Slice
           </button>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
+        <div id="cCardA" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
           <div class="flex items-center justify-center gap-2 mb-3">
             <h3 id="cTitleA" class="text-sm font-semibold text-slate-400 text-center">Pie Chart A</h3>
             <span id="cBadgeA" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"></span>
@@ -348,7 +353,7 @@
             Add Slice
           </button>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
+        <div id="cCardB" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center">
           <div class="flex items-center justify-center gap-2 mb-3">
             <h3 id="cTitleB" class="text-sm font-semibold text-slate-400 text-center">Pie Chart B</h3>
             <span id="cBadgeB" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700"></span>
@@ -378,8 +383,12 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           Download JPG (Side by Side)
         </button>
+        <button onclick="downloadCompareTransparentPNG()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm border-2 border-dashed border-slate-300 hover:border-slate-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Transparent PNG
+        </button>
       </div>
-      <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG free. No watermarks. <span id="cTransparentNote" class="hidden text-amber-600 font-medium">Transparent mode: PNG only.</span></p>
+      <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG free. No watermarks.</p>
     </div>
 
   </div>
@@ -411,9 +420,10 @@
         </div>
 
         <!-- Theme Roll -->
-        <div class="flex flex-col gap-1 min-w-[420px]">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Color Theme</p>
-          <div id="pipPaletteGrid" class="grid grid-cols-3 gap-2 mt-1"></div>
+        <div class="flex flex-col gap-1 min-w-[180px]">
+          <div id="pipActiveTheme"></div>
+          <div id="pipPaletteGrid" class="grid grid-cols-3 gap-2 mt-1 hidden"></div>
+          <button id="pipExpandColors" onclick="pipToggleColors()" class="mt-1 text-xs text-sky-500 hover:text-sky-700 font-semibold text-left transition-colors">▼ Expand Colors</button>
         </div>
 
         <!-- Style -->
@@ -471,6 +481,10 @@
         <button onclick="exportPip('pie-of-pie.jpg','image/jpeg')" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           Download JPG
+        </button>
+        <button onclick="exportPip('pie-of-pie-transparent.png','image/png',true)" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm border-2 border-dashed border-slate-300 hover:border-slate-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Transparent PNG
         </button>
       </div>
       <p class="text-xs text-slate-400 mt-2">PNG &amp; JPG free. No watermarks.</p>
@@ -685,13 +699,13 @@
   // Handle URL hash on page load
   function handleHashNavigation() {
     
-    const hash = window.location.hash.slice(1); // Remove #
+    const hash = window.location.hash; // Keep the # for comparison with tabRoutes
     let targetTab = 'single';
     let useSpecialTitle = null;
     
     // Find tab based on hash
     for (const [tab, route] of Object.entries(tabRoutes)) {
-      if (route === hash) {
+      if (route && route === hash) {
         targetTab = tab;
         break;
       }
@@ -723,7 +737,8 @@
     activePalette: 'Clean Corporate',
     valueUnit: '',
     showTotal: false,
-    transparentBg: false
+    transparentBg: false,
+    darkMode: false
   };
 
   const PALETTES = [
@@ -746,6 +761,7 @@
     showSizeLabel: false,
     showTotal: false,
     transparentBg: false,
+    darkMode: false,
     valueUnit: '',
     rowsA: [], rowsB: []
   };
@@ -822,9 +838,10 @@
       const elA=document.getElementById('cTotalA'), elB=document.getElementById('cTotalB');
       if(elA) elA.textContent=totalA>0?'Total: '+totalA.toLocaleString():'';
       if(elB) elB.textContent=totalB>0?'Total: '+totalB.toLocaleString():'';
+      const dark2 = !!CSTATE.darkMode;
       const tA=document.getElementById('cTitleA'), tB=document.getElementById('cTitleB');
-      if(tA){tA.textContent=CSTATE.titleA||'Pie Chart A';tA.className='text-sm font-semibold text-center '+(CSTATE.titleA?'text-slate-700':'text-slate-400');}
-      if(tB){tB.textContent=CSTATE.titleB||'Pie Chart B';tB.className='text-sm font-semibold text-center '+(CSTATE.titleB?'text-slate-700':'text-slate-400');}
+      if(tA){tA.textContent=CSTATE.titleA||'Pie Chart A';tA.className='text-sm font-semibold text-center '+(dark2?(CSTATE.titleA?'text-slate-100':'text-slate-500'):(CSTATE.titleA?'text-slate-700':'text-slate-400'));}
+      if(tB){tB.textContent=CSTATE.titleB||'Pie Chart B';tB.className='text-sm font-semibold text-center '+(dark2?(CSTATE.titleB?'text-slate-100':'text-slate-500'):(CSTATE.titleB?'text-slate-700':'text-slate-400'));}
       // % larger badge next to the bigger chart title
       const bA=document.getElementById('cBadgeA'), bB=document.getElementById('cBadgeB');
       if (bA && bB) {
@@ -863,8 +880,8 @@
     if(sl) sl.checked = !!CSTATE.showSizeLabel;
     if(st) st.checked = !!CSTATE.showTotal;
     if(ct) ct.checked = !!CSTATE.transparentBg;
-    const cn = document.getElementById('cTransparentNote');
-    if(cn) cn.classList.toggle('hidden', !CSTATE.transparentBg);
+    const cdk = document.getElementById('cDarkToggle');
+    if(cdk) cdk.className = 'toggle-track '+(CSTATE.darkMode?'on':'off');
   }
 
   function toggleProportional(checked) {
@@ -920,6 +937,10 @@
     if (side==='A' && chartInstanceA) { chartInstanceA.destroy(); chartInstanceA=null; }
     if (side==='B' && chartInstanceB) { chartInstanceB.destroy(); chartInstanceB=null; }
 
+    const dark = !!CSTATE.darkMode;
+    const cardEl = document.getElementById('cCard'+side);
+    if (cardEl) { cardEl.style.background = dark ? '#0b0f17' : ''; cardEl.style.borderColor = dark ? '#1e293b' : ''; }
+
     // Scale font with chart size — use square-root scaling so small charts don't get illegibly tiny
     const BASE = 280;
     const ratio = Math.sqrt(size / BASE);
@@ -934,21 +955,21 @@
 
     const instance = new Chart(canvas, {
       type: STATE.isDonut ? 'doughnut' : 'pie',
-      data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:'#fff', borderWidth:2, hoverOffset:6 }] },
+      data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor: dark ? '#0b0f17' : '#fff', borderWidth:2, hoverOffset:6 }] },
       options: {
         responsive: false,
         layout: { padding: Math.round(size * 0.04) },
         animation: { duration:300 },
         plugins: {
-          legend: { display: STATE.showLegend, position:'bottom', labels:{ padding:10, boxWidth:10, boxHeight:10, font:{size:legendFont}, color:'#475569' } },
+          legend: { display: STATE.showLegend, position:'bottom', labels:{ padding:10, boxWidth:10, boxHeight:10, font:{size:legendFont}, color: dark ? '#e2e8f0' : '#475569' } },
           tooltip: { callbacks: { label: ctx => { const u=CSTATE.valueUnit?' '+CSTATE.valueUnit:''; return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}${u} (${((ctx.parsed/total)*100).toFixed(1)}%)`; } } },
           datalabels: {
             display: ctx => STATE.labelModes.length > 0,
             formatter: (val, ctx) => {
               const parts = [];
               if (STATE.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
-              if (STATE.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
               if (STATE.labelModes.includes('value'))   parts.push(val.toLocaleString()+(CSTATE.valueUnit?' '+CSTATE.valueUnit:''));
+              if (STATE.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
               return parts.length ? parts.join('\n') : '';
             },
             color: ctx => contrastColor(colors[ctx.dataIndex]),
@@ -1117,10 +1138,8 @@
     PIP.activePalette = theme.name;
     PIP.darkMode = !!theme.dark;
     PIP.charts.forEach((ch, ci) => {
-      const pal = theme.tiers
-        ? theme.tiers[Math.min(ci, theme.tiers.length-1)]
-        : (ci===0 ? theme.pie1 : tierPalette(theme.pie1[0], ci, ch.rows.length, theme));
-      ch.rows = ch.rows.map((r,i) => ({ ...r, color: pal[i % pal.length] }));
+      const pal = pipPaletteFor(ci); // full palette with generated extensions, no modulo looping
+      ch.rows = ch.rows.map((r,i) => ({ ...r, color: pal[i] || pal[pal.length-1] }));
     });
   }
 
@@ -1234,12 +1253,54 @@
     savePip(); renderPipColumns(); renderPipCharts();
   }
 
+  function pipToggleColors() {
+    const grid = document.getElementById('pipPaletteGrid');
+    const btn  = document.getElementById('pipExpandColors');
+    if (!grid || !btn) return;
+    const expanded = !grid.classList.contains('hidden');
+    grid.classList.toggle('hidden', expanded);
+    btn.textContent = expanded ? '▼ Expand Colors' : '▲ Collapse Colors';
+  }
+
   function renderPipPaletteGrid() {
     const grid = document.getElementById('pipPaletteGrid');
+    const activeThemeEl = document.getElementById('pipActiveTheme');
     if (!grid) return;
     grid.innerHTML = '';
     
     const dots = arr => arr.slice(0,3).map(c=>`<span class="w-2.5 h-2.5 rounded-full ring-1 ring-black/5" style="background:${c}"></span>`).join('');
+    
+    // Render top row: first theme from each phase column
+    if (activeThemeEl) {
+      const phases = [
+        { title: 'Modern',   themes: NESTED_THEMES.filter(t => !t.tiers && !['Clean Corporate','Pastel','Vibrant','Monochrome'].includes(t.name)) },
+        { title: 'Inspired', themes: NESTED_THEMES.filter(t => t.tiers) },
+        { title: 'Classic',  themes: NESTED_THEMES.filter(t => ['Clean Corporate','Pastel','Vibrant','Monochrome'].includes(t.name)) }
+      ];
+      activeThemeEl.innerHTML = '';
+      const topRow = document.createElement('div');
+      topRow.className = 'grid grid-cols-3 gap-2';
+      phases.forEach(phase => {
+        const col = document.createElement('div');
+        col.className = 'flex flex-col gap-1.5';
+        const hdr = document.createElement('div');
+        hdr.className = 'text-xs font-semibold text-slate-500 uppercase tracking-wide text-center pb-1 border-b border-slate-100';
+        hdr.textContent = phase.title;
+        col.appendChild(hdr);
+        const t = phase.themes[0];
+        if (t) {
+          const start = t.tiers ? t.tiers[0] : t.pie1;
+          const end   = t.tiers ? t.tiers[t.tiers.length-1] : tierPalette(t.pie1[0], 2, 3, t);
+          const btn = document.createElement('button');
+          btn.className = 'palette-btn border rounded-lg p-2 flex flex-col items-start gap-1.5 transition-all text-left border-slate-200 hover:border-slate-300' + (PIP.activePalette===t.name?' active':'');
+          btn.innerHTML = `<div class="flex items-center gap-1"><span class="flex gap-0.5">${dots(start)}</span><span class="text-slate-300 text-[10px]">&#8594;</span><span class="flex gap-0.5">${dots(end)}</span></div><span class="text-xs font-medium text-slate-600">${t.name}</span>`;
+          btn.onclick = () => { applyPipTheme(t.name); savePip(); renderPipPaletteGrid(); renderPipUI(); };
+          col.appendChild(btn);
+        }
+        topRow.appendChild(col);
+      });
+      activeThemeEl.appendChild(topRow);
+    }
     
     // Define theme phases
     const phases = [
@@ -1257,19 +1318,13 @@
       }
     ];
     
-    // Create columns for each phase
+    // Create columns for each phase (skip first theme — already shown in top row, no headers)
     phases.forEach(phase => {
       const column = document.createElement('div');
       column.className = 'flex flex-col gap-1.5';
       
-      // Add phase header
-      const header = document.createElement('div');
-      header.className = 'text-xs font-semibold text-slate-500 uppercase tracking-wide text-center pb-1 border-b border-slate-100';
-      header.textContent = phase.title;
-      column.appendChild(header);
-      
-      // Add theme buttons
-      phase.themes.forEach(t => {
+      // Add theme buttons — skip index 0
+      phase.themes.slice(1).forEach(t => {
         const start = t.tiers ? t.tiers[0] : t.pie1;
         const end   = t.tiers ? t.tiers[t.tiers.length-1] : tierPalette(t.pie1[0], 2, 3, t);
         const btn = document.createElement('button');
@@ -1435,9 +1490,9 @@
               display: ctx => PIP.labelModes.length > 0,
               formatter: (val, ctx) => {
                 const parts = [];
-                if (PIP.labelModes.includes('label')) parts.push(ctx.chart.data.labels[ctx.dataIndex]);
-                if (PIP.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
+                if (PIP.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
                 if (PIP.labelModes.includes('value'))   parts.push(val.toLocaleString());
+                if (PIP.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
                 return parts.length ? parts.join('\n') : '';
               },
               color: ctx => contrastColor(colors[ctx.dataIndex]),
@@ -1532,7 +1587,7 @@
     renderPipCharts();
   }
 
-  function exportPip(name, type) {
+  function exportPip(name, type, transparent = false) {
     const items = [];
     PIP.charts.forEach((chart, ci) => {
       const valid = chart.rows.filter(r=>Number(r.value)>0);
@@ -1541,7 +1596,7 @@
     if (!items.length) { alert('Add data to at least one pie first!'); return; }
 
     const dark = !!PIP.darkMode;
-    const bgColor = dark ? '#0b0f17' : '#ffffff';
+    const bgColor = transparent ? null : (dark ? '#0b0f17' : '#ffffff');
     const sliceBorder = dark ? '#0b0f17' : '#fff';
     const txtColor = dark ? '#e2e8f0' : '#475569';
     const SC = 3;
@@ -1567,7 +1622,7 @@
     const off = document.createElement('canvas');
     off.width = totalW; off.height = totalH;
     const ctx = off.getContext('2d');
-    ctx.fillStyle = bgColor; ctx.fillRect(0,0,totalW,totalH);
+    if (bgColor) { ctx.fillStyle = bgColor; ctx.fillRect(0,0,totalW,totalH); }
 
     // Render each chart onto a hidden offscreen canvas synchronously
     const rendered = items.map(({ chart, valid, ci }, idx) => {
@@ -1853,6 +1908,15 @@
     saveState(); rerender();
   }
 
+  function toggleDarkMode() {
+    STATE.darkMode = !STATE.darkMode;
+    const t = document.getElementById('darkToggle');
+    t.className = 'toggle-track ' + (STATE.darkMode ? 'on' : 'off');
+    const card = document.getElementById('chartCard');
+    if (card) card.style.background = STATE.darkMode ? '#0b0f17' : '';
+    saveState(); rerender();
+  }
+
   // ── Chart ────────────────────────────────────────────────────────────────────
   function renderChart() {
     const canvas = document.getElementById('pieChart');
@@ -1874,9 +1938,15 @@
 
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
+    const dark = !!STATE.darkMode;
+    const card = document.getElementById('chartCard');
+    if (card) { card.style.background = dark ? '#0b0f17' : ''; card.style.borderColor = dark ? '#1e293b' : ''; }
+    const titleEl = document.getElementById('chartTitleDisplay');
+    if (titleEl) titleEl.style.color = dark ? '#f1f5f9' : '';
+
     chartInstance = new Chart(canvas, {
       type: STATE.isDonut ? 'doughnut' : 'pie',
-      data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor:'#fff', borderWidth:2, hoverOffset:8 }] },
+      data: { labels, datasets:[{ data:values, backgroundColor:colors, borderColor: dark ? '#0b0f17' : '#fff', borderWidth:2, hoverOffset:8 }] },
       options: {
         responsive: true,
         animation: { duration:300, easing:'easeInOutQuart' },
@@ -1884,7 +1954,7 @@
           legend: {
             display: STATE.showLegend,
             position: 'bottom',
-            labels: { padding:16, boxWidth:12, boxHeight:12, font:{size:12}, color:'#475569' }
+            labels: { padding:16, boxWidth:12, boxHeight:12, font:{size:12}, color: dark ? '#e2e8f0' : '#475569' }
           },
           tooltip: { callbacks: { label: ctx => { const u=STATE.valueUnit?' '+STATE.valueUnit:''; return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}${u} (${((ctx.parsed/total)*100).toFixed(1)}%)`; } } },
           datalabels: {
@@ -1892,8 +1962,8 @@
             formatter: (val, ctx) => {
               const parts = [];
               if (STATE.labelModes.includes('label'))   parts.push(ctx.chart.data.labels[ctx.dataIndex]);
-              if (STATE.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
               if (STATE.labelModes.includes('value'))   parts.push(val.toLocaleString()+(STATE.valueUnit?' '+STATE.valueUnit:''));
+              if (STATE.labelModes.includes('percent')) parts.push(((val/total)*100).toFixed(1)+'%');
               return parts.length ? parts.join('\n') : '';
             },
             color: ctx => contrastColor(colors[ctx.dataIndex]),
@@ -1930,7 +2000,10 @@
   // ── Export ───────────────────────────────────────────────────────────────────
   function downloadPNG() { exportCanvas('pie-chart.png','image/png'); }
   function downloadJPG() { exportCanvas('pie-chart.jpg','image/jpeg'); }
-  function exportCanvas(name, type) {
+  function downloadTransparentPNG() { exportCanvas('pie-chart-transparent.png','image/png', true); }
+  function downloadCompareTransparentPNG() { exportComparison('compare-chart-transparent.png','image/png', true); }
+  function exportCanvas(name, type, transparent = false) {
+    const dark = !!STATE.darkMode;
     if (!chartInstance) { alert('Generate a chart first!'); return; }
     const valid  = STATE.rows.filter(r => Number(r.value) > 0);
     const total  = valid.reduce((s,r)=>s+Number(r.value),0);
@@ -1974,8 +2047,8 @@
             ctx.fillText(totalLine, SIZE/2, SIZE + TITLE_H + Math.round(FOOT*0.65));
           }
           const a = document.createElement('a');
-          const exportType = STATE.transparentBg ? 'image/png' : type;
-          const exportName = STATE.transparentBg ? name.replace(/\.jpg$/i, '.png') : name;
+          const exportType = transparent ? 'image/png' : type;
+          const exportName = transparent ? name.replace(/\.jpg$/i, '.png') : name;
           a.download = exportName; a.href = off.toDataURL(exportType, 0.95); a.click();
           hiChart.destroy(); document.body.removeChild(off);
         }},
@@ -2005,11 +2078,9 @@
       plugins: [{
         id: 'bgFill',
         beforeDraw: (chart) => {
-          if (!STATE.transparentBg) {
+          if (!transparent) {
             const c = chart.canvas.getContext('2d');
-            c.save(); c.fillStyle = '#ffffff';
-            c.fillRect(0, 0, chart.canvas.width, chart.canvas.height);
-            c.restore();
+            c.save(); c.fillStyle = dark ? '#0b0f17' : '#ffffff'; c.fillRect(0, 0, chart.canvas.width, chart.canvas.height); c.restore();
           }
         }
       }]
@@ -2018,7 +2089,8 @@
 
   function downloadComparePNG() { exportComparison('compare-chart.png','image/png'); }
   function downloadCompareJPG() { exportComparison('compare-chart.jpg','image/jpeg'); }
-  function exportComparison(name, type) {
+  function exportComparison(name, type, transparent = false) {
+    const dark = !!CSTATE.darkMode;
     const cA = document.getElementById('cChartA');
     const cB = document.getElementById('cChartB');
     if (!chartInstanceA && !chartInstanceB) { alert('Add data to both charts first!'); return; }
@@ -2034,7 +2106,7 @@
     const off = document.createElement('canvas');
     off.width = totalW; off.height = totalH;
     const ctx = off.getContext('2d');
-    if (!CSTATE.transparentBg) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,totalW,totalH); }
+    if (!transparent) { ctx.fillStyle = dark ? '#0b0f17' : '#ffffff'; ctx.fillRect(0,0,totalW,totalH); }
     ctx.scale(SC, SC); // scale all subsequent drawing ops
     const PADu=PAD/SC, GAPu=GAP/SC, TITLE_Hu=TITLE_H/SC, wAu=wA/SC, hAu=hA/SC, wBu=wB/SC, hBu=hB/SC;
     // Build badge text
@@ -2102,10 +2174,11 @@
     document.getElementById('fontSizeLabel').textContent = STATE.fontSize + 'px';
     document.getElementById('legendToggle').className = 'toggle-track ' + (STATE.showLegend?'on':'off');
     document.getElementById('donutToggle').className   = 'toggle-track ' + (STATE.isDonut?'on':'off');
-    document.getElementById('totalToggle').className       = 'toggle-track ' + (STATE.showTotal?'on':'off');
-    document.getElementById('transparentToggle').className = 'toggle-track ' + (STATE.transparentBg?'on':'off');
-    const tn = document.getElementById('transparentNote');
-    if (tn) tn.classList.toggle('hidden', !STATE.transparentBg);
+    document.getElementById('totalToggle').className = 'toggle-track ' + (STATE.showTotal?'on':'off');
+    const dk = document.getElementById('darkToggle');
+    if (dk) dk.className = 'toggle-track ' + (STATE.darkMode?'on':'off');
+    const card2 = document.getElementById('chartCard');
+    if (card2) card2.style.background = STATE.darkMode ? '#0b0f17' : '';
     const modes = STATE.labelModes || ['percent'];
     ['percent','value','label'].forEach(m => {
       const cb = document.getElementById('mode-'+m);
